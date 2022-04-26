@@ -13,6 +13,9 @@ import os
 import pandas as pd
 import sys
 import time
+from functools import cached_property
+import math
+from itertools import cycle
 
 # NB: should be run with python3
 
@@ -81,110 +84,83 @@ datelist = ['2018-09-20']
 beamperiod = [[datetime(2018,9,20,18,0,0),datetime(2018,9,26,8,0,0)],[datetime(2018,9,26,18,0,0),datetime(2018,10,3,8,0,0)],[datetime(2018,10,10,18,0,0),datetime(2018,10,17,8,0,0)],[datetime(2018,10,17,18,0,0),datetime(2018,10,18,8,0,0)],[datetime(2018,10,18,18,0,0),datetime(2018,10,24,8,0,0)],[datetime(2018,11,1,18,0,0),datetime(2018,11,7,8,0,0)],[datetime(2018,11,7,18,0,0),datetime(2018,11,12,6,0,0)]]
 
 
-
-
-def get_ms_and_curr_arrays(file_name):
-    raw = pd.read_csv(file_name, sep=' ', header=None, usecols=[0, 1]).values
-    mseconds_raw = raw[:, 0].astype(int)
-    currents_raw = raw[:, 1]
-    return mseconds_raw, currents_raw
-
-
-def get_index_arrays_for_interval(ms_array, ms_interval):
-    n_intervals = int((ms_array[-1] - ms_array[0]) / ms_interval) + 1
-    index_arrays = []
-    for i in range(n_intervals):
-        ms_0, ms_1 = [i * ms_interval + ms[0], (i + 1) * ms_interval + ms[0]]
-        index_arrays.append(np.where((ms >= ms_0) * (ms < ms_1))[0])
-    return index_arrays
-
-
 class Analyzer:
-    def __init__(self, name='', unit='', value_column=1, rms_interval=30, file_names=None):
+    def __init__(self, name='', unit='', value_column=1, rms_interval=30*60*1000, file_names=None):
         self.name = name
         self.unit = unit
         self.value_column = value_column
         self.rms_interval = rms_interval
         self.file_names = file_names
-        self.ms_array = np.array([], dtype=int)
-        self.value_array = np.array([])
-        self.time_stamps = []
-        self.time_stamps = None
 
-    @property
+    @cached_property
+    def val_array(self):
+        return self._ms_val_matrix[:, 1]
+
+    @cached_property
+    def ms_array(self):
+        return self._ms_val_matrix[:, 0].astype(int)
+
+    @cached_property
     def time_stamps(self):
-        return self._time_stamps
+        return pd.arrays.DatetimeArray(self.ms_array * 1000000)
 
-    @time_stamps.setter
-    def time_stamps(self):
-        self._temperature = pd.arrays.DatetimeArray(self.ms_array * 1000000)
+    @cached_property
+    def val_std_array(self):
+        return np.array([np.std(self.val_array[m]) for m in self._interval_masks])
 
-    def _get_msecs_and_values_from_file(self, file_name):
-        raw = pd.read_csv(file_name, sep=' ', header=None, usecols=[0, self.value_column]).values
-        return raw[:, 0].astype(int), raw[:, 1]
+    @cached_property
+    def ms_std_array(self):
+        return self.ms_array[[m[0] for m in self._interval_masks]]
 
-    def set_msecs_and_values(self):
-        for file_name in self.file_names:
-            ms_temp, val_temp = self._get_msecs_and_values_from_file(file_name)
-            self.ms_array = np.concatenate((self.ms_array, ms_temp))
-            self.value_array = np.concatenate((self.value_array, val_temp))
+    @cached_property
+    def interval_time_stamps(self):
+        return self.time_stamps[[m[0] for m in self._interval_masks]]
 
-    def get_index_arrays(self):
-        n_intervals = int((self.ms_array[-1] - self.ms_array[0]) / self.rms_interval) + 1
-        index_arrays = []
-        for i in range(n_intervals):
-            ms_0, ms_1 = [i * self.rms_interval + ms[0], (i + 1) * self.rms_interval + ms[0]]
-            index_arrays.append(np.where((ms >= ms_0) * (ms < ms_1))[0])
-        return index_arrays
+    @cached_property
+    def _ms_val_matrix(self):
+        return np.concatenate([self._get_ms_value_matrix_from_file(f) for f in self.file_names])
 
-    @property
-    def time_stamps(self):
-        self.
+    @cached_property
+    def _n_intervals(self):
+        return math.ceil((self.ms_array[-1] - self.ms_array[0]) / self.rms_interval)
 
-file_list = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
-analyzer = Analyzer(name='Current', unit='uA', value_column=1, rms_interval=30, file_names=file_list)
-analyzer.set_msecs_and_values()
+    @cached_property
+    def _ms_interval_edgess(self):
+        return [self.ms_array[0] + i*self.rms_interval for i in range(self._n_intervals+1)]
 
+    @cached_property
+    def _interval_masks(self):
+        masks = []
+        for i in range(self._n_intervals):
+            ms_0, ms_1 = [self._ms_interval_edgess[i], self._ms_interval_edgess[i+1]]
+            masks.append(np.where((self.ms_array >= ms_0) * (self.ms_array < ms_1))[0])
+        return masks
 
-for d in datelist:
-    inFile = ROOTDIR + '/data/heinzCurr_' + d + '.csv'
-    ms, curr = get_ms_and_curr_arrays(inFile)
-    ts = pd.arrays.DatetimeArray(ms * 1000000)
-    index_arrays = get_index_arrays_for_interval(ms, 1800. * 1000.)
-    [rms, rms_ms] = np.empty(len(index_arrays)), np.empty(len(index_arrays))
-    for i, index_array in enumerate(index_arrays):
-        ms_view, curr_view = [ms[index_array], curr[index_array]]
-        rms[i] = np.std(curr_view)
-        rms_ms[i] = ms[index_array[0]]
-    rms_ms = ms[[index_array[0] for index_array in index_arrays]]
-    rms_ts = pd.arrays.DatetimeArray(rms_ms * 1000000)
+    def _get_ms_value_matrix_from_file(self, file_name):
+        print(f'self.__name__ = {self}')
+        print(f'file_name = {file_name}')
+        return pd.read_csv(file_name, sep=' ', header=None, usecols=[0, self.value_column]).values
 
 
-for d in datelist:
-    inFile = ROOTDIR + '/data/heinzVolt_' + d + '.csv'
-    volt_ms, volt = get_ms_and_curr_arrays(inFile)
-    volt_ts = pd.arrays.DatetimeArray(volt_ms * 1000000)
-    index_arrays = get_index_arrays_for_interval(volt_ms, 1800. * 1000.)
-    [vrms, vrms_ms] = np.empty(len(index_arrays)), np.empty(len(index_arrays))
-    for i, index_array in enumerate(index_arrays):
-        ms_view, volt_view = [volt_ms[index_array], volt[index_array]]
-        vrms[i] = np.std(volt_view)
-        rms_ms[i] = ms[index_array[0]]
-    vrms_ms = volt_ms[[index_array[0] for index_array in index_arrays]]
-    vrms_ts = pd.arrays.DatetimeArray(vrms_ms * 1000000)
+
+file_list= [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
+analyzer_curr = Analyzer(name='Current', unit='uA', value_column=1, rms_interval=30*60*1000, file_names=file_list)
+
+file_list = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
+analyzer_volt = Analyzer(name='heinzVolt', unit='kV', value_column=1, rms_interval=30*60*1000, file_names=file_list)
 
 
-a0.plot_date(ts,curr,color='red',markersize=0.15)
-a1.plot_date(rms_ts,rms,color='darkviolet',markersize=0.5)
-a2.plot_date(volt_ts,volt,color='blue',markersize=0.15)
-a3.plot_date(vrms_ts,vrms,color='green',markersize=0.5)
-a0.set_xlim(ts[0],ts[-1])
+a0.plot_date(analyzer_curr.time_stamps, analyzer_curr.val_array, color='red', markersize=0.15)
+a1.plot_date(analyzer_curr.interval_time_stamps, analyzer_curr.val_std_array, color='darkviolet', markersize=0.5)
+a2.plot_date(analyzer_volt.time_stamps, analyzer_volt.val_array, color='blue', markersize=0.15)
+a3.plot_date(analyzer_volt.interval_time_stamps, analyzer_volt.val_std_array, color='green', markersize=0.5)
+a0.set_xlim(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1])
 
 days = mdates.DayLocator()
 a0.xaxis.set_major_locator(days)
 
-a0.axvspan(ts[0],ts[-1],facecolor='salmon',alpha=0.2)
-a2.axvspan(ts[0],ts[-1],facecolor='salmon',alpha=0.2)
+a0.axvspan(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1],facecolor='salmon',alpha=0.2)
+a2.axvspan(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1],facecolor='salmon',alpha=0.2)
 
 for period in beamperiod:
     a0.axvspan(period[0],period[1], facecolor='green', alpha=0.2)
