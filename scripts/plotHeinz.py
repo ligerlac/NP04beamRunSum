@@ -22,8 +22,6 @@ startTime = datetime.now()
 ROOTDIR = os.environ["NP04BRSROOT"]
 
 
-tup = datetime(2000,1,1,0,0,0)
-
 fig = plt.figure(figsize=(6, 8))
 grid = gridspec.GridSpec(ncols=1,nrows=2,figure=fig,height_ratios=[1,1])
 #fig, ax = plt.subplots(3, 1, sharex='col')
@@ -83,14 +81,6 @@ datelist = ['2018-09-20']
 beamperiod = [[datetime(2018,9,20,18,0,0),datetime(2018,9,26,8,0,0)],[datetime(2018,9,26,18,0,0),datetime(2018,10,3,8,0,0)],[datetime(2018,10,10,18,0,0),datetime(2018,10,17,8,0,0)],[datetime(2018,10,17,18,0,0),datetime(2018,10,18,8,0,0)],[datetime(2018,10,18,18,0,0),datetime(2018,10,24,8,0,0)],[datetime(2018,11,1,18,0,0),datetime(2018,11,7,8,0,0)],[datetime(2018,11,7,18,0,0),datetime(2018,11,12,6,0,0)]]
 
 
-def convert_to_time_stamp(ts):
-    converted = datetime.utcfromtimestamp(ts) + timedelta(hours=1)
-    return converted
-
-
-convert_to_time_stamp_vec = np.vectorize(convert_to_time_stamp)
-
-
 def get_ms_and_curr_arrays(file_name):
     raw = pd.read_csv(file_name, sep=' ', header=None, usecols=[0, 1]).values
     mseconds_raw = raw[:, 0].astype(int)
@@ -120,7 +110,6 @@ for d in datelist:
     rms_ms = ms[[index_array[0] for index_array in index_arrays]]
     rms_ts = pd.arrays.DatetimeArray(rms_ms * 1000000)
 
-tup = datetime(2000,1,1,0,0,0)
 
 for d in datelist:
     inFile = ROOTDIR + '/data/heinzVolt_' + d + '.csv'
