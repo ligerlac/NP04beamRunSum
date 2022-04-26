@@ -81,6 +81,8 @@ datelist = ['2018-09-20']
 beamperiod = [[datetime(2018,9,20,18,0,0),datetime(2018,9,26,8,0,0)],[datetime(2018,9,26,18,0,0),datetime(2018,10,3,8,0,0)],[datetime(2018,10,10,18,0,0),datetime(2018,10,17,8,0,0)],[datetime(2018,10,17,18,0,0),datetime(2018,10,18,8,0,0)],[datetime(2018,10,18,18,0,0),datetime(2018,10,24,8,0,0)],[datetime(2018,11,1,18,0,0),datetime(2018,11,7,8,0,0)],[datetime(2018,11,7,18,0,0),datetime(2018,11,12,6,0,0)]]
 
 
+
+
 def get_ms_and_curr_arrays(file_name):
     raw = pd.read_csv(file_name, sep=' ', header=None, usecols=[0, 1]).values
     mseconds_raw = raw[:, 0].astype(int)
@@ -95,6 +97,53 @@ def get_index_arrays_for_interval(ms_array, ms_interval):
         ms_0, ms_1 = [i * ms_interval + ms[0], (i + 1) * ms_interval + ms[0]]
         index_arrays.append(np.where((ms >= ms_0) * (ms < ms_1))[0])
     return index_arrays
+
+
+class Analyzer:
+    def __init__(self, name='', unit='', value_column=1, rms_interval=30, file_names=None):
+        self.name = name
+        self.unit = unit
+        self.value_column = value_column
+        self.rms_interval = rms_interval
+        self.file_names = file_names
+        self.ms_array = np.array([], dtype=int)
+        self.value_array = np.array([])
+        self.time_stamps = []
+        self.time_stamps = None
+
+    @property
+    def time_stamps(self):
+        return self._time_stamps
+
+    @time_stamps.setter
+    def time_stamps(self):
+        self._temperature = pd.arrays.DatetimeArray(self.ms_array * 1000000)
+
+    def _get_msecs_and_values_from_file(self, file_name):
+        raw = pd.read_csv(file_name, sep=' ', header=None, usecols=[0, self.value_column]).values
+        return raw[:, 0].astype(int), raw[:, 1]
+
+    def set_msecs_and_values(self):
+        for file_name in self.file_names:
+            ms_temp, val_temp = self._get_msecs_and_values_from_file(file_name)
+            self.ms_array = np.concatenate((self.ms_array, ms_temp))
+            self.value_array = np.concatenate((self.value_array, val_temp))
+
+    def get_index_arrays(self):
+        n_intervals = int((self.ms_array[-1] - self.ms_array[0]) / self.rms_interval) + 1
+        index_arrays = []
+        for i in range(n_intervals):
+            ms_0, ms_1 = [i * self.rms_interval + ms[0], (i + 1) * self.rms_interval + ms[0]]
+            index_arrays.append(np.where((ms >= ms_0) * (ms < ms_1))[0])
+        return index_arrays
+
+    @property
+    def time_stamps(self):
+        self.
+
+file_list = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
+analyzer = Analyzer(name='Current', unit='uA', value_column=1, rms_interval=30, file_names=file_list)
+analyzer.set_msecs_and_values()
 
 
 for d in datelist:
