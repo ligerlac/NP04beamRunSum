@@ -21,16 +21,6 @@ import time
 startTime = datetime.now()
 ROOTDIR = os.environ["NP04BRSROOT"]
 
-curr     = []
-ts       = []
-rms      = []
-rms_ts   = []
-rms_tmp  = []
-volt     = []
-volt_ts  = []
-vrms_tmp = []
-vrms     = []
-vrms_ts  = []
 
 tup = datetime(2000,1,1,0,0,0)
 
@@ -112,93 +102,39 @@ def get_index_arrays_for_interval(ms_array, ms_interval):
     n_intervals = int((ms_array[-1] - ms_array[0]) / ms_interval) + 1
     index_arrays = []
     for i in range(n_intervals):
-        ms_0, ms_1 = [i * ms_interval + ms_new[0], (i + 1) * ms_interval + ms_new[0]]
-        index_arrays.append(np.where((ms_new >= ms_0) * (ms_new < ms_1))[0])
+        ms_0, ms_1 = [i * ms_interval + ms[0], (i + 1) * ms_interval + ms[0]]
+        index_arrays.append(np.where((ms >= ms_0) * (ms < ms_1))[0])
     return index_arrays
 
 
-t_0 = time.time()
 for d in datelist:
     inFile = ROOTDIR + '/data/heinzCurr_' + d + '.csv'
-    ms_new, curr_new = get_ms_and_curr_arrays(inFile)
-    ts_new = pd.arrays.DatetimeArray(ms_new*1000000)
-    index_arrays = get_index_arrays_for_interval(ms_new, 1800. * 1000.)
-    [rms_new, rms_ms_new] = np.empty(len(index_arrays)), np.empty(len(index_arrays))
+    ms, curr = get_ms_and_curr_arrays(inFile)
+    ts = pd.arrays.DatetimeArray(ms * 1000000)
+    index_arrays = get_index_arrays_for_interval(ms, 1800. * 1000.)
+    [rms, rms_ms] = np.empty(len(index_arrays)), np.empty(len(index_arrays))
     for i, index_array in enumerate(index_arrays):
-        ms_view, curr_view = [ms_new[index_array], curr_new[index_array]]
-        rms_new[i] = np.std(curr_view)
-        rms_ms_new[i] = ms_new[index_array[0]]
-    rms_ts_new = convert_to_time_stamp_vec(rms_ms_new/1000)
-print(f'my method took {time.time()-t_0} sec')
-
-t_0 = time.time()
-for d in datelist:
-    inFile = ROOTDIR + '/data/heinzCurr_' + d + '.csv'
-    with open(inFile,newline='') as f:
-        reader = csv.reader(f,delimiter=' ')
-        for row in reader:
-            time_in_s = float(row[0])/1e3   #in seconds
-            t = datetime.utcfromtimestamp(time_in_s) + timedelta(hours=1)
-            #print(t)
-            c = float(row[1])
-            ts.append(t)
-            curr.append(c)
-            rms_tmp.append(c)
-            #print((t-tup).total_seconds())
-            if (t-tup).total_seconds() > 1800.:
-            #if True:
-                std = np.std(rms_tmp)
-                rms.append(std)
-                rms_ts.append(t)       # should be average not t_up, fix later
-                tup = t
-                #print(rms_tmp)
-                #print('~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-                rms_tmp = []
-print(f'Kevins method took {time.time()-t_0} sec')
-
-
-#print(f'curr = {curr}')
-#print(f'curr_new = {curr_new}')
-
-
-print(f'p.ma.allequal(ts_new, ts) = {np.ma.allequal(ts_new, ts)}')
-print(f'p.ma.allequal(curr_new, curr) = {np.ma.allequal(curr_new, curr)}')
-
-print(f'p.ma.allequal(rms_new, rms) = {np.ma.allequal(rms_new, rms)}')
-print(f'p.ma.allequal(rms_ts_new, rms_ts) = {np.ma.allequal(rms_ts_new, rms_ts)}')
-
-#print(f'rms = {rms}')
-#print(f'rms_new = {rms_new}')
-
-sys.exit(0)
-
-print(f'ts == ts_new_conv = {ts==ts_new_conv}')
-print(f'curr == curr_new = {curr==curr_new}')
-print(f'type(ts) = {type(ts)}')
-print(f'len(ts) = {len(ts)}')
-print(f'type(curr) = {type(curr)}')
-print(f'len(curr) = {len(curr)}')
+        ms_view, curr_view = [ms[index_array], curr[index_array]]
+        rms[i] = np.std(curr_view)
+        rms_ms[i] = ms[index_array[0]]
+    rms_ms = ms[[index_array[0] for index_array in index_arrays]]
+    rms_ts = pd.arrays.DatetimeArray(rms_ms * 1000000)
 
 tup = datetime(2000,1,1,0,0,0)
 
 for d in datelist:
     inFile = ROOTDIR + '/data/heinzVolt_' + d + '.csv'
-    with open(inFile,newline='') as f:
-        reader = csv.reader(f,delimiter=' ')
-        for row in reader:
-            time = float(row[0])/1e3   #in seconds
-            t = datetime.utcfromtimestamp(time) + timedelta(hours=1)
-            v = float(row[1])/1e3      # in kV
-            volt_ts.append(t)
-            volt.append(v)
-            vrms_tmp.append(v)
-            if (t-tup).total_seconds() > 1800.:
-            #if True:
-                std = np.std(vrms_tmp)
-                vrms.append(std)
-                vrms_ts.append(t)       # should be average not t_up, fix later
-                tup = t
-                vrms_tmp = []
+    volt_ms, volt = get_ms_and_curr_arrays(inFile)
+    volt_ts = pd.arrays.DatetimeArray(volt_ms * 1000000)
+    index_arrays = get_index_arrays_for_interval(volt_ms, 1800. * 1000.)
+    [vrms, vrms_ms] = np.empty(len(index_arrays)), np.empty(len(index_arrays))
+    for i, index_array in enumerate(index_arrays):
+        ms_view, volt_view = [volt_ms[index_array], volt[index_array]]
+        vrms[i] = np.std(volt_view)
+        rms_ms[i] = ms[index_array[0]]
+    vrms_ms = volt_ms[[index_array[0] for index_array in index_arrays]]
+    vrms_ts = pd.arrays.DatetimeArray(vrms_ms * 1000000)
+
 
 a0.plot_date(ts,curr,color='red',markersize=0.15)
 a1.plot_date(rms_ts,rms,color='darkviolet',markersize=0.5)
