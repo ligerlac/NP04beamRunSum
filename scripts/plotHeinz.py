@@ -102,7 +102,7 @@ class Analyzer:
 
     @cached_property
     def time_stamps(self):
-        return pd.arrays.DatetimeArray(self.ms_array * 1000000)
+        return pd.arrays.DatetimeArray((self.ms_array + 1000*60*60) * 1000000)
 
     @cached_property
     def val_std_array(self):
@@ -114,7 +114,7 @@ class Analyzer:
 
     @cached_property
     def interval_time_stamps(self):
-        return self.time_stamps[[m[0] for m in self._interval_masks]]
+        return self.time_stamps[[int(np.median(m)) for m in self._interval_masks]]
 
     @cached_property
     def _ms_val_matrix(self):
@@ -137,8 +137,6 @@ class Analyzer:
         return masks
 
     def _get_ms_value_matrix_from_file(self, file_name):
-        print(f'self.__name__ = {self}')
-        print(f'file_name = {file_name}')
         return pd.read_csv(file_name, sep=' ', header=None, usecols=[0, self.value_column]).values
 
 
@@ -162,6 +160,7 @@ a0.xaxis.set_major_locator(days)
 a0.axvspan(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1],facecolor='salmon',alpha=0.2)
 a2.axvspan(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1],facecolor='salmon',alpha=0.2)
 
+
 for period in beamperiod:
     a0.axvspan(period[0],period[1], facecolor='green', alpha=0.2)
     a2.axvspan(period[0],period[1], facecolor='green', alpha=0.2)
@@ -169,5 +168,5 @@ for period in beamperiod:
 print('run time [s] = ')
 print(datetime.now() - startTime)
 #plt.tight_layout(pad=0)
-plt.savefig('if.png')
+plt.savefig('new.png')
 plt.show()
