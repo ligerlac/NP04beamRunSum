@@ -27,6 +27,8 @@ from datetime import timedelta
 import pandas as pd
 import time as pytime
 import os
+import sys
+from analyzer import TriggerAnalyzer, DAQAnalyzer
 startTime = datetime.now()
 
 # USER: Make a list of the days you want to include in the plot here.
@@ -39,7 +41,7 @@ startTime = datetime.now()
 #datelist = ['2018-09-14','2018-09-15','2018-09-16','2018-09-17','2018-09-18','2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11']
 
 #datelist = ['2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11','2018-11-12']
-dateList = ['2018-09-19']
+datelist = ['2018-09-19']
 
 beamperiod = [[datetime(2018,9,20,18,0,0),datetime(2018,9,26,8,0,0)],[datetime(2018,9,26,18,0,0),datetime(2018,10,3,8,0,0)],[datetime(2018,10,10,18,0,0),datetime(2018,10,17,8,0,0)],[datetime(2018,10,17,18,0,0),datetime(2018,10,18,8,0,0)],[datetime(2018,10,18,18,0,0),datetime(2018,10,24,8,0,0)],[datetime(2018,11,1,18,0,0),datetime(2018,11,7,8,0,0)],[datetime(2018,11,7,18,0,0),datetime(2018,11,12,8,0,0)]]
 
@@ -83,6 +85,10 @@ ROOTDIR = os.environ["NP04BRSROOT"]
 
 print('STEPPERLE - 1')
 
+file_name = ROOTDIR + '/data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv'
+
+analyzer = TriggerAnalyzer(name='Test', unit='', value_column=2, rms_interval=30*60*1000, file_names=[file_name])
+
 #with open(ROOTDIR + '/data/TIMBER_DATA_newtriggers.csv',newline='') as trigFile:
 with open(ROOTDIR + '/data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv',newline='') as trigFile:
     reader = csv.reader(trigFile,delimiter=',')
@@ -97,23 +103,60 @@ with open(ROOTDIR + '/data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv',newline='')
             trigCount.append(Ntrig)
             trig_ts.append(t)
 
+print(f'p.ma.allequal(trigCount, analyzer.cum_val_array) = {np.ma.allequal(trigCount, analyzer.cum_val_array)}')
+print(f'p.ma.allequal(trig_ts, analyzer.time_stamps) = {np.ma.allequal(trig_ts, analyzer.time_stamps)}')
+
+
+
 aqTrigCount = []
 aqTrig_ts   = []
 NaqTrig     = 0.
 
 print('STEPPERLE - 2')
+file_name = ROOTDIR + '/data/DAQ-runlist.csv'
+analyzer_daq = DAQAnalyzer(name='Test', unit='', time_stamp_column=3, value_column=4, category_column=1, rms_interval=30*60*1000, file_names=[file_name])
+analyzer_daq.excluded_categories = ['commissioning', 'calibration']
+analyzer_daq.upper_ts_limit = '2018-11-12 11:00:00'
+
 
 with open(ROOTDIR + '/data/DAQ-runlist.csv',newline='') as f:
     reader = csv.reader(f,delimiter=',')
-    for row in reversed(list(reader)):
+#    for row in reversed(list(reader)):
+    for row in list(reader):
         endString = row[3]
+        #print(f'endString = {endString}')
         endString = endString[:-4]
+        #print(f'endString = {endString}')
         endDAQ = datetime.strptime(endString, '%a, %d %b %Y %H:%M:%S')
+        #print(f'endDAQ = {endDAQ}')
+        #sys.exit(0)
         if endDAQ < datetime(2018,11,12,10,0,0) and not (str(row[1]) == 'commissioning' or str(row[1]) == 'calibration'):
+            #print(f'row[4] = {row[4]}')
             NaqTrig = NaqTrig + float(row[4])
             aqTrigCount.append(NaqTrig)
-            aqTrig_ts.append(endDAQ) 
+            aqTrig_ts.append(endDAQ)
 
+print(f'len(aqTrigCount) = {len(aqTrigCount)}')
+print(f'len(analyzer_daq.cum_val_array) = {len(analyzer_daq.cum_val_array)}')
+
+print(f'aqTrigCount[0] = {aqTrigCount[0]}')
+print(f'analyzer_daq.cum_val_array[0]) = {analyzer_daq.cum_val_array[0]}')
+
+print(f'aqTrigCount[-1] = {aqTrigCount[-1]}')
+print(f'analyzer_daq.cum_val_array[-1]) = {analyzer_daq.cum_val_array[-1]}')
+
+print(f'len(aqTrig_ts) = {len(aqTrig_ts)}')
+print(f'len(analyzer_daq.filtered_time_stamps) = {len(analyzer_daq.filtered_time_stamps)}')
+
+print(f'aqTrig_ts[0] = {aqTrig_ts[0]}')
+print(f'analyzer_daq.filtered_time_stamps[0]) = {analyzer_daq.filtered_time_stamps[0]}')
+
+print(f'aqTrig_ts[-1] = {aqTrig_ts[-1]}')
+print(f'analyzer_daq.filtered_time_stamps[-1]) = {analyzer_daq.filtered_time_stamps[-1]}')
+
+
+print(f'p.ma.allequal(aqTrigCount, analyzer_daq.cum_val_array) = {np.ma.allequal(aqTrigCount, analyzer_daq.cum_val_array)}')
+print(f'p.ma.allequal(aqTrig_ts, analyzer_daq.filtered_time_stamps) = {np.ma.allequal(aqTrig_ts, analyzer_daq.filtered_time_stamps)}')
 
 ######################
 ### Lifetime:
@@ -489,4 +532,4 @@ print(datetime.now() - startTime)
 #plt.savefig(ROOTDIR + '/output/beamRunSummary.pdf', format='pdf', dpi=1200)
 #plt.savefig(ROOTDIR + '/output/beamRunSummary.png', format='png', dpi=1200)
 #plt.savefig(ROOTDIR + '/output/beamRunSummary.ps', format='ps', dpi=1200)
-plt.show()
+#plt.show()
