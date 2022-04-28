@@ -63,14 +63,6 @@ class Analyzer:
         return pd.read_csv(file_name, sep=' ', header=None, usecols=[self.time_stamp_column, self.value_column]).values
 
 
-class HeinzAnalyzer(Analyzer):
-
-    @cached_property
-    def time_stamps(self):
-#        return pd.DatetimeIndex(self.first_column * 1000000)#.tz_localize("UTC").tz_convert("CET")
-        return pd.DatetimeIndex(self.first_column * 1000000).shift(1, freq='H')
-
-
 class TriggerAnalyzer(Analyzer):
 
     @cached_property
@@ -136,3 +128,67 @@ class DAQAnalyzer(Analyzer):
         for excluded_cat in self.excluded_categories:
             filtered = filtered[self.data_frame.category != excluded_cat]
         return filtered
+
+
+class IntervalHandler:
+    def __init__(self, interval, first_ts, last_ts):
+        self.interval = interval
+        self.first_ts = first_ts
+        self.last_ts = last_ts
+
+    @cached_property
+    def n(self):
+        return math.ceil((self.last_ts - self.first_ts) / self.interval)
+
+    @cached_property
+    def edges(self):
+        return [self.first_ts + i*self.interval for i in range(self.n+1)]
+
+    @cached_property
+    def mean_time_stamps(self):
+        return [self.edges[i]+self.interval/2 for i in range(self.n)]
+
+
+
+class GeneralAnalyzer:
+    def __init__(self, interval=pd.Timedelta(30,"m"), file_names=None):
+        self.interval = interval
+        self.file_names = file_names
+
+    @abc.abstractmethod
+    def _get_data_frame_from_file(self, fn):
+        return pd.read_csv(fn, sep=',', index_col=1, usecols=[1, 3, 4], names=['cat', 'timestamp', 'trig_count'])
+
+    def _shift_data_frame(self, data_frame):
+        data_frame['timestamp'] = pd.to_datetime(data_frame.index).shift(1, freq='H')
+        return data_frame.set_index('timestamp')
+
+    @cached_property
+    def interval_handler(self):
+        return IntervalHandler(self.interval, self.data_frame.index[0], self.data_frame.index[-1])
+
+    @cached_property
+    def data_frame(self):
+        df = pd.concat([self._get_data_frame_from_file(fn) for fn in self.file_names], axis=0)
+        return self._shift_data_frame(df)
+
+    @cached_property
+    def interval_data_frames(self):
+        n, edges = [self.interval_handler.n, self.interval_handler.edges]
+        return [self.data_frame.loc[edges[i]:edges[i+1]] for i in range(n)]
+
+    @cached_property
+    def val_std_array(self):
+        return np.array([np.std(df) for df in self.interval_data_frames])
+
+
+class NewAnalyzer(GeneralAnalyzer):
+    def _get_data_frame_from_file(self, fn):
+        return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 2], names=['timestamp', 'trig_count'], header=0)
+
+
+class HeinzAnalyzer(GeneralAnalyzer):
+    def _get_data_frame_from_file(self, fn):
+        df = pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1], names=['timestamp', 'curr'], header=None)
+        df.index = 1000000*df.index
+        return df

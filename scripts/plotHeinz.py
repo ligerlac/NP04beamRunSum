@@ -3,8 +3,10 @@ from datetime import datetime
 import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
-import os
-from analyzer import Analyzer
+import os, sys
+from analyzer import HeinzAnalyzer
+import time
+import numpy as np
 
 # NB: should be run with python3
 
@@ -73,24 +75,31 @@ datelist = ['2018-09-20']
 beamperiod = [[datetime(2018,9,20,18,0,0),datetime(2018,9,26,8,0,0)],[datetime(2018,9,26,18,0,0),datetime(2018,10,3,8,0,0)],[datetime(2018,10,10,18,0,0),datetime(2018,10,17,8,0,0)],[datetime(2018,10,17,18,0,0),datetime(2018,10,18,8,0,0)],[datetime(2018,10,18,18,0,0),datetime(2018,10,24,8,0,0)],[datetime(2018,11,1,18,0,0),datetime(2018,11,7,8,0,0)],[datetime(2018,11,7,18,0,0),datetime(2018,11,12,6,0,0)]]
 
 
-file_list= [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
-analyzer_curr = Analyzer(name='Current', unit='uA', value_column=1, rms_interval=30*60*1000, file_names=file_list)
+file_list = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
+analyzer_curr = HeinzAnalyzer(file_names=file_list)
 
 file_list = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
-analyzer_volt = Analyzer(name='heinzVolt', unit='kV', value_column=1, rms_interval=30*60*1000, file_names=file_list)
+analyzer_volt = HeinzAnalyzer(file_names=file_list)
 
 
-a0.plot_date(analyzer_curr.time_stamps, analyzer_curr.val_array, color='red', markersize=0.15)
-a1.plot_date(analyzer_curr.interval_time_stamps, analyzer_curr.val_std_array, color='darkviolet', markersize=0.5)
-a2.plot_date(analyzer_volt.time_stamps, analyzer_volt.val_array, color='blue', markersize=0.15)
-a3.plot_date(analyzer_volt.interval_time_stamps, analyzer_volt.val_std_array, color='green', markersize=0.5)
-a0.set_xlim(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1])
+c_ts, c_val = [analyzer_curr.data_frame.index, analyzer_curr.data_frame['curr']]
+a0.plot_date(c_ts, c_val, color='red', markersize=0.15)
+
+c_int_ts, c_int_val = [analyzer_curr.interval_handler.mean_time_stamps, analyzer_curr.val_std_array]
+a1.plot_date(c_int_ts, c_int_val, color='darkviolet', markersize=0.5)
+
+v_ts, v_val = [analyzer_volt.data_frame.index, analyzer_volt.data_frame['curr']]
+a2.plot_date(v_ts, v_val, color='blue', markersize=0.15)
+
+v_int_ts, v_int_val = [analyzer_volt.interval_handler.mean_time_stamps, analyzer_volt.val_std_array]
+a3.plot_date(v_int_ts, v_int_val, color='green', markersize=0.5)
+a0.set_xlim(c_ts[0], c_ts[-1])
 
 days = mdates.DayLocator()
 a0.xaxis.set_major_locator(days)
 
-a0.axvspan(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1],facecolor='salmon',alpha=0.2)
-a2.axvspan(analyzer_curr.time_stamps[0], analyzer_curr.time_stamps[-1],facecolor='salmon',alpha=0.2)
+a0.axvspan(c_ts[0], c_ts[-1],facecolor='salmon',alpha=0.2)
+a2.axvspan(c_ts[0], c_ts[-1],facecolor='salmon',alpha=0.2)
 
 
 for period in beamperiod:
