@@ -166,7 +166,7 @@ class GeneralAnalyzer:
         return df
 
     def _shift_data_frame(self, data_frame):
-        data_frame['timestamp'] = pd.to_datetime(data_frame.index).shift(1, freq='H')
+        data_frame['timestamp'] = pd.to_datetime(data_frame.index)#.shift(1, freq='H')
         return data_frame.set_index('timestamp')
 
     @cached_property
@@ -191,7 +191,7 @@ class GeneralAnalyzer:
 
 class HeinzAnalyzer(GeneralAnalyzer):
     def _get_data_frame_from_file(self, fn):
-        df = pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1], names=['timestamp', 'curr'])
+        df = pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1], names=['timestamp', 'value'])
         return df
 
     def _modify_data_frame(self, df):
@@ -234,4 +234,7 @@ class LifeTimeAnalyzer(GeneralAnalyzer):
         return df
 
 
+class EFieldAnalyzer(GeneralAnalyzer):
+    def _get_data_frame_from_file(self, fn):
+        return pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1], names=['timestamp', 'efield'], header=0)
 
