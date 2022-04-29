@@ -76,10 +76,10 @@ beamperiod = [[datetime(2018,9,20,18,0,0),datetime(2018,9,26,8,0,0)],[datetime(2
 
 
 file_list = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
-analyzer_curr = HeinzAnalyzer(file_names=file_list)
+analyzer_curr = HeinzAnalyzer(file_names=file_list, val_name='curr')
 
 file_list = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
-analyzer_volt = HeinzAnalyzer(file_names=file_list)
+analyzer_volt = HeinzAnalyzer(file_names=file_list, val_name='volt')
 
 
 c_ts, c_val = [analyzer_curr.data_frame.index, analyzer_curr.data_frame['curr']]
@@ -88,7 +88,7 @@ a0.plot_date(c_ts, c_val, color='red', markersize=0.15)
 c_int_ts, c_int_val = [analyzer_curr.interval_handler.mean_time_stamps, analyzer_curr.val_std_array]
 a1.plot_date(c_int_ts, c_int_val, color='darkviolet', markersize=0.5)
 
-v_ts, v_val = [analyzer_volt.data_frame.index, analyzer_volt.data_frame['curr']]
+v_ts, v_val = [analyzer_volt.data_frame.index, analyzer_volt.data_frame['volt']]
 a2.plot_date(v_ts, v_val, color='blue', markersize=0.15)
 
 v_int_ts, v_int_val = [analyzer_volt.interval_handler.mean_time_stamps, analyzer_volt.val_std_array]

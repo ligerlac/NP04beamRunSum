@@ -28,7 +28,7 @@ import pandas as pd
 import time as pytime
 import os
 import sys
-from analyzer import TriggerAnalyzer, DAQAnalyzer, LifeTimeAnalyzer, HeinzAnalyzer
+from analyzer import TriggerAnalyzer, DAQAnalyzer, LifeTimeAnalyzer, HeinzAnalyzer, CombinedHeinzAnalyzer
 
 startTime = datetime.now()
 
@@ -203,11 +203,11 @@ if plotEField:
 
     print('STEPPERLE - 4.1')
     file_names = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
-    analyzer_curr = HeinzAnalyzer(file_names=file_names)
-    resampled_curr = analyzer_curr.data_frame.resample('S')['value'].sum()
-    resampled_curr = pd.Series.to_frame(resampled_curr).rename(columns={"value": "sumCurr"})
-    resampled_ncurr = analyzer_curr.data_frame.resample('S')['value'].count()
-    resampled_ncurr = pd.Series.to_frame(resampled_ncurr).rename(columns={"value": "nCurr"})
+    analyzer_curr = HeinzAnalyzer(file_names=file_names, val_name='curr')
+    resampled_curr = analyzer_curr.data_frame.resample('S')['curr'].sum()
+    resampled_curr = pd.Series.to_frame(resampled_curr).rename(columns={"curr": "sumCurr"})
+    resampled_ncurr = analyzer_curr.data_frame.resample('S')['curr'].count()
+    resampled_ncurr = pd.Series.to_frame(resampled_ncurr).rename(columns={"curr": "nCurr"})
     print(f'resampled_curr = {resampled_curr}')
     print(f'resampled_ncurr = {resampled_ncurr}')
 
@@ -255,11 +255,11 @@ if plotEField:
     print('STEPPERLE - 4.2')
 
     file_names = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
-    analyzer_volt = HeinzAnalyzer(file_names=file_names)
-    resampled_volt = analyzer_volt.data_frame.resample('S')['value'].sum()
-    resampled_volt = pd.Series.to_frame(resampled_volt).rename(columns={"value": "sumVolt"})
-    resampled_nvolt = analyzer_volt.data_frame.resample('S')['value'].count()
-    resampled_nvolt = pd.Series.to_frame(resampled_nvolt).rename(columns={"value": "nVolt"})
+    analyzer_volt = HeinzAnalyzer(file_names=file_names, val_name='volt')
+    resampled_volt = analyzer_volt.data_frame.resample('S')['volt'].sum()
+    resampled_volt = pd.Series.to_frame(resampled_volt).rename(columns={"volt": "sumVolt"})
+    resampled_nvolt = analyzer_volt.data_frame.resample('S')['volt'].count()
+    resampled_nvolt = pd.Series.to_frame(resampled_nvolt).rename(columns={"volt": "nVolt"})
 
     for d in datelist:
         inFile = ROOTDIR + '/data/heinzVolt_' + d + '.csv'
@@ -276,9 +276,11 @@ if plotEField:
 
     print(f'df =\n{df}')
 
+    comb_ana = CombinedHeinzAnalyzer([analyzer_curr, analyzer_volt])
     df_new = pd.concat([resampled_curr, resampled_ncurr, resampled_volt, resampled_nvolt], axis=1)
 
     print(f'df_new =\n{df_new}')
+    print(f'comb_ana.data_frame =\n{comb_ana.data_frame}')
 
     sys.exit(0)
 
