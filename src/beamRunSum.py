@@ -28,7 +28,7 @@ import pandas as pd
 import time as pytime
 import os
 import sys
-from analyzer import TriggerAnalyzer, DAQAnalyzer, LifeTimeAnalyzer, HeinzAnalyzer, CombinedHeinzAnalyzer
+from analyzers.analyzer import TriggerAnalyzer, DAQAnalyzer, LifeTimeAnalyzer, HeinzAnalyzer, CombinedHeinzAnalyzer
 
 startTime = datetime.now()
 
@@ -41,8 +41,8 @@ startTime = datetime.now()
 # datelist = ['2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14']
 # datelist = ['2018-09-14','2018-09-15','2018-09-16','2018-09-17','2018-09-18','2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11']
 
-# datelist = ['2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11','2018-11-12']
-datelist = ['2018-09-19']
+datelist = ['2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11','2018-11-12']
+#datelist = ['2018-09-19']
 
 beamperiod = [[datetime(2018, 9, 20, 18, 0, 0), datetime(2018, 9, 26, 8, 0, 0)],
               [datetime(2018, 9, 26, 18, 0, 0), datetime(2018, 10, 3, 8, 0, 0)],
@@ -83,209 +83,40 @@ beamMom_ts = [datetime(2018, 10, 10, 17, 59, 59),  # 0
               datetime(2018, 11, 11, 22, 00, 0), datetime(2018, 11, 12, 7, 59, 59),  # 1
               datetime(2018, 11, 12, 8, 0, 0)]
 
-# accumulated beam triggers:
-
-trigCount = []
-trig_ts = []
-Ntrig = 0.
-
 ROOTDIR = os.environ["NP04BRSROOT"]
 
 print('STEPPERLE - 1')
-
 file_name = ROOTDIR + '/data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv'
-file_names = [file_name]
-
-# with open(ROOTDIR + '/data/TIMBER_DATA_newtriggers.csv',newline='') as trigFile:
-with open(ROOTDIR + '/data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv', newline='') as trigFile:
-    reader = csv.reader(trigFile, delimiter=',')
-    lineNum = 0
-    for row in reader:
-        lineNum += 1
-        if lineNum > 1:
-            t = datetime.strptime(str(row[0]), '%Y-%m-%d %H:%M:%S.%f')
-            t = t + timedelta(0, 3600)  # UTC --> CET
-            trig = float(row[2])
-            Ntrig = Ntrig + trig
-            trigCount.append(Ntrig)
-            trig_ts.append(t)
-
-new_analyzer = TriggerAnalyzer(file_names=file_names)
-
-# print(f'p.ma.allequal(trigCount, analyzer.cum_val_array) = {np.ma.allequal(trigCount, analyzer.cum_val_array)}')
-# print(f'p.ma.allequal(trig_ts, analyzer.time_stamps) = {np.ma.allequal(trig_ts, analyzer.time_stamps)}')
-
-
-aqTrigCount = []
-aqTrig_ts = []
-NaqTrig = 0.
+analyzer_trig = TriggerAnalyzer(file_names=[file_name])
 
 print('STEPPERLE - 2')
 file_name = ROOTDIR + '/data/DAQ-runlist.csv'
 analyzer_daq = DAQAnalyzer(file_names=[file_name], excl_cats=['commissioning', 'calibration'])
-# analyzer_daq.excluded_categories = ['commissioning', 'calibration']
-# analyzer_daq.upper_ts_limit = '2018-11-12 11:00:00'
-
-with open(ROOTDIR + '/data/DAQ-runlist.csv', newline='') as f:
-    reader = csv.reader(f, delimiter=',')
-    #    for row in reversed(list(reader)):
-    for row in list(reader):
-        endString = row[3]
-        # print(f'endString = {endString}')
-        endString = endString[:-4]
-        # print(f'endString = {endString}')
-        endDAQ = datetime.strptime(endString, '%a, %d %b %Y %H:%M:%S')
-        # print(f'endDAQ = {endDAQ}')
-        # sys.exit(0)
-        if endDAQ < datetime(2018, 11, 12, 10, 0, 0) and not (
-                str(row[1]) == 'commissioning' or str(row[1]) == 'calibration'):
-            # print(f'row[4] = {row[4]}')
-            NaqTrig = NaqTrig + float(row[4])
-            aqTrigCount.append(NaqTrig)
-            aqTrig_ts.append(endDAQ)
-
-######################
-### Lifetime:
-######################
-etau = []
-etau_ts = []
-contam = []
 
 print('STEPPERLE - 3')
 file_name = ROOTDIR + '/data/prm_Top_lifetime_data.csv'
 analyzer_lifetime = LifeTimeAnalyzer(file_names=[file_name])
 
-with open(ROOTDIR + '/data/prm_Top_lifetime_data.csv', newline='') as purFile:
-    reader = csv.reader(purFile, delimiter=',')
-    lineNum = 0
-    for row in reader:
-        lineNum += 1
-        if lineNum > 1:
-            t = datetime.strptime(str(row[0]), '%Y-%m-%d %H:%M:%S.%f')
-            lt = float(row[1])
-            cont = (1. / lt) * (0.1 * 3.)
-            etau.append(lt)
-            etau_ts.append(t)
-            contam.append(cont)
-
-######################
-### Electric Field:
-#######################
-
-plotEField = True
-eField = []
-secBins = []
-
 print('STEPPERLE - 4')
-
-if plotEField:
-
-    beginning = datetime.strptime(datelist[0] + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
-    ending = datetime.strptime(datelist[-1] + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
-#    ending = datetime.strptime(datelist[-1] + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
-#    ending = ending + timedelta(1, 7258)
-    # beginning = beginning + timedelta(1,10)
-
-    tempSB = []
-    temp = beginning
-
-    while temp < (ending + timedelta(0, 1)):
-        # print(temp)
-        tempSB.append(temp)
-        temp = temp + timedelta(0, 1)
-    # add the last bin
-    tempSB.append(temp)
-
-    df = pd.DataFrame(index=tempSB, columns=['sumCurr', 'Ncurr', 'sumVolt', 'Nvolt'])
-    df = df.fillna(0.)
-
-    # Fill data into panda tables to bin into seconds
-
-    print('STEPPERLE - 4.1')
-    file_names = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
-    analyzer_curr = HeinzAnalyzer(file_names=file_names, val_name='curr')
-    resampled_curr = analyzer_curr.data_frame.resample('S')['curr'].sum()
-    resampled_curr = pd.Series.to_frame(resampled_curr).rename(columns={"curr": "sumCurr"})
-    resampled_ncurr = analyzer_curr.data_frame.resample('S')['curr'].count()
-    resampled_ncurr = pd.Series.to_frame(resampled_ncurr).rename(columns={"curr": "nCurr"})
-    print(f'resampled_curr = {resampled_curr}')
-    print(f'resampled_ncurr = {resampled_ncurr}')
-
-    #sys.exit(0)
-
-    t_list = []
-    t_list_dupl = []
-    for d in datelist:
-        inFile = ROOTDIR + '/data/heinzCurr_' + d + '.csv'
-        with open(inFile, newline='') as f:
-            reader = csv.reader(f, delimiter=' ')
-            for row in reader:
-                time = float(row[0]) / 1e3  # in seconds
-                # t = datetime.fromtimestamp(time)
-                t = datetime.utcfromtimestamp(time)# + timedelta(hours=1)
-                if t in t_list:
-                    t_list_dupl.append(t)
-                else:
-                    t_list.append(t)
-                # print(t)
-                c = float(row[1])
-                df.at[t, 'sumCurr'] = df.at[t, 'sumCurr'] + c
-                df.at[t, 'Ncurr'] = df.at[t, 'Ncurr'] + 1
-
-#    plt.figure()
-#    resampled_curr.plot()
-#    df.plot()
-#    plt.show()
-#    sys.exit(0)
+file_names = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
+analyzer_curr = HeinzAnalyzer(file_names=file_names, val_name='curr')
+file_names = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
+analyzer_volt = HeinzAnalyzer(file_names=file_names, val_name='volt')
+comb_ana = CombinedHeinzAnalyzer([analyzer_curr, analyzer_volt])
 
 
-    print(f'df =\n{df}')
-
-    print(f'analyzer_curr.data_frame =\n{analyzer_curr.data_frame}')
-
-    print(f'len(df) =\n{len(df)}')
-    print(f'len(analyzer_curr.data_frame) =\n{len(analyzer_curr.data_frame)}')
-
-    print(f'analyzer_curr.data_frame.index.unique() = {analyzer_curr.data_frame.index.unique()}')
-    print(f'len(analyzer_curr.data_frame.index.unique()) = {len(analyzer_curr.data_frame.index.unique())}')
-
-    print(f'len(t_list) ={len(t_list)}, len(t_list_dupl) = {len(t_list_dupl)}')
+HVcutFile = ROOTDIR + '/data/np04-HVcutPeriods.csv'
+with open(HVcutFile, mode='w') as f:
+    writer = csv.writer(f, delimiter=',')
+df = comb_ana.data_frame
+print(f'df =\n{df}')
+#for i in df.index:
 
 
-    print('STEPPERLE - 4.2')
 
-    file_names = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
-    analyzer_volt = HeinzAnalyzer(file_names=file_names, val_name='volt')
-    resampled_volt = analyzer_volt.data_frame.resample('S')['volt'].sum()
-    resampled_volt = pd.Series.to_frame(resampled_volt).rename(columns={"volt": "sumVolt"})
-    resampled_nvolt = analyzer_volt.data_frame.resample('S')['volt'].count()
-    resampled_nvolt = pd.Series.to_frame(resampled_nvolt).rename(columns={"volt": "nVolt"})
 
-    for d in datelist:
-        inFile = ROOTDIR + '/data/heinzVolt_' + d + '.csv'
-        with open(inFile, newline='') as f:
-            reader = csv.reader(f, delimiter=' ')
-            for row in reader:
-                time = float(row[0]) / 1e3  # in seconds
-                # t = datetime.utcfromtimestamp(time)
-                t = datetime.utcfromtimestamp(time)# + timedelta(hours=1)
-                # print(t)
-                v = float(row[1])
-                df.at[t, 'sumVolt'] = df.at[t, 'sumVolt'] + v
-                df.at[t, 'Nvolt'] = df.at[t, 'Nvolt'] + 1
-
-    print(f'df =\n{df}')
-
-    comb_ana = CombinedHeinzAnalyzer([analyzer_curr, analyzer_volt])
-    df_new = pd.concat([resampled_curr, resampled_ncurr, resampled_volt, resampled_nvolt], axis=1)
-
-    print(f'df_new =\n{df_new}')
-    print(f'comb_ana.data_frame =\n{comb_ana.data_frame}')
-
-    sys.exit(0)
-
-    # make HV stability cuts and calculate %uptime
-
+ding = False
+if ding:
     streamerON = False
     cutONperiod = []
     up_bins = []
@@ -368,6 +199,17 @@ else:
     eField = [0., 0.]
 
 print('STEPPERLE - 5')
+streamerON = False
+cutONperiod = []
+up_bins = []
+upTime = []
+upSecCount = 0.
+totSecCount = 0.
+binSize = 12  # hours
+upSC_list = [0.] * 12
+
+b1 = datetime(2018, 10, 5, 0, 0, 0)
+b2 = datetime(2018, 10, 17, 12, 0, 0)
 
 #########################
 ### Plotting:
@@ -462,12 +304,15 @@ a0.add_patch(rect2)
 a0.text(0.72, 1.07, 'Beam OFF', transform=a0.transAxes)
 
 # plot the data
-
+[secBins, eField] = comb_ana.data_frame.index, comb_ana.data_frame['efield']
 a2.plot_date(secBins, eField, color='red', markersize=0.15)
 a0.plot(beamMom_ts, beamMom, linewidth=3, markersize=3, color='black')
+[trig_ts, trigCount] = analyzer_trig.data_frame.index, analyzer_trig.data_frame['trig_count_sum']
 BItrig = a0_0.plot_date(trig_ts, trigCount, color='blue', markersize=0., linestyle='solid')
+[aqTrig_ts, aqTrigCount] = analyzer_daq.data_frame.index, analyzer_daq.data_frame['trig_count_sum']
 DAQtrig = a0_0.plot_date(aqTrig_ts, aqTrigCount, color='blue', markersize=0., linestyle='dashed')
 a4.plot_date(up_bins, upTime, color='navy', markersize=0.3, linestyle='solid')
+[etau_ts, etau, contam] = analyzer_lifetime.data_frame.index, analyzer_lifetime.data_frame['lifetime'], analyzer_lifetime.data_frame['contamination']
 if plotContamination:
     a1.plot_date(etau_ts, contam, linestyle='None', color='darkviolet', marker='o', markersize=3)
     a1_1.plot_date(etau_ts, contam, linestyle='None', color='darkviolet', marker='o', markersize=3)
@@ -576,9 +421,9 @@ for cut in cutONperiod:
 print('run time [s]')
 print(datetime.now() - startTime)
 # plt.tight_layout(pad=0)
-# plt.savefig(ROOTDIR + '/output/beamRunSummary.eps', format='eps', dpi=1200)
-# plt.savefig(ROOTDIR + '/output/beamRunSummary.svg', format='svg', dpi=1200)
-# plt.savefig(ROOTDIR + '/output/beamRunSummary.pdf', format='pdf', dpi=1200)
-# plt.savefig(ROOTDIR + '/output/beamRunSummary.png', format='png', dpi=1200)
-# plt.savefig(ROOTDIR + '/output/beamRunSummary.ps', format='ps', dpi=1200)
-# plt.show()
+# plt.savefig(ROOTDIR + '/output/beamRunSummary_new.eps', format='eps', dpi=1200)
+# plt.savefig(ROOTDIR + '/output/beamRunSummary_new.svg', format='svg', dpi=1200)
+# plt.savefig(ROOTDIR + '/output/beamRunSummary_new.pdf', format='pdf', dpi=1200)
+plt.savefig(ROOTDIR + '/output/beamRunSummary_new.png', format='png', dpi=1200)
+# plt.savefig(ROOTDIR + '/output/beamRunSummary_new.ps', format='ps', dpi=1200)
+plt.show()

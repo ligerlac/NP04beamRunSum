@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 import os, sys
-from analyzers import analyzer
+from analyzers.analyzer import HeinzAnalyzer
 import time
 import numpy as np
 
@@ -76,10 +76,10 @@ beamperiod = [[datetime(2018,9,20,18,0,0),datetime(2018,9,26,8,0,0)],[datetime(2
 
 
 file_list = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
-analyzer_curr = analyzer.HeinzAnalyzer(file_names=file_list, val_name='curr')
+analyzer_curr = HeinzAnalyzer(file_names=file_list, val_name='curr')
 
 file_list = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
-analyzer_volt = analyzer.HeinzAnalyzer(file_names=file_list, val_name='volt')
+analyzer_volt = HeinzAnalyzer(file_names=file_list, val_name='volt')
 
 
 c_ts, c_val = [analyzer_curr.data_frame.index, analyzer_curr.data_frame['curr']]

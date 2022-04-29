@@ -13,8 +13,8 @@ class GeneralAnalyzer:
         return pd.Dataframe()
 
     @abc.abstractmethod
-    def _modify_data_frame(self, df):
-        pass
+    def _get_modified_data_frame(self, df):
+        return df
 
     def _get_shift_data_frame(self, data_frame):
         data_frame['timestamp'] = pd.to_datetime(data_frame.index)#.shift(1, freq='H')
@@ -23,7 +23,7 @@ class GeneralAnalyzer:
     @cached_property
     def data_frame(self):
         df = pd.concat([self._get_data_frame_from_file(fn) for fn in self.file_names], axis=0)
-        self._modify_data_frame(df)
+        df = self._get_modified_data_frame(df)
         return self._get_shift_data_frame(df)
 
 
@@ -44,3 +44,34 @@ class IntervalAnalyzer(GeneralAnalyzer):
     @cached_property
     def interval_handler(self):
         return IntervalHandler(self.interval, self.data_frame.index[0], self.data_frame.index[-1])
+
+
+class CombinedAnalyzer:
+    def __init__(self, analyzer_list=None):
+        self.analyzer_list = analyzer_list
+        self.resample_rate = 'S'
+
+    def _get_data_frames(self):
+        dfs = []
+        for ana in self.analyzer_list:
+            dfs.append(self._resample_value(ana))
+            dfs.append(self._resample_count(ana))
+        return dfs
+
+    @abc.abstractmethod
+    def _get_modified_data_frame(self, df):
+        return df
+
+    def _resample_value(self, ana):
+        res = ana.data_frame.resample(self.resample_rate)[ana.val_name].sum()
+        return pd.Series.to_frame(res).rename(columns={ana.val_name: 'sum'+ana.val_name})
+
+    def _resample_count(self, ana):
+        res = ana.data_frame.resample(self.resample_rate)[ana.val_name].count()
+        return pd.Series.to_frame(res).rename(columns={ana.val_name: 'n'+ana.val_name})
+
+    @cached_property
+    def data_frame(self):
+        df = pd.concat(self._get_data_frames(), axis=1)
+        df = self._get_modified_data_frame(df)
+        return df
