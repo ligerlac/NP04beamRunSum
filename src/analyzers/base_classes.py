@@ -16,15 +16,15 @@ class GeneralAnalyzer:
     def _get_modified_data_frame(self, df):
         return df
 
-    def _get_shift_data_frame(self, data_frame):
-        data_frame['timestamp'] = pd.to_datetime(data_frame.index)#.shift(1, freq='H')
+    def _get_shifted_data_frame(self, data_frame):
+        data_frame['timestamp'] = pd.to_datetime(data_frame.index).shift(1, freq='H')
         return data_frame.set_index('timestamp')
 
     @cached_property
     def data_frame(self):
         df = pd.concat([self._get_data_frame_from_file(fn) for fn in self.file_names], axis=0)
         df = self._get_modified_data_frame(df)
-        return self._get_shift_data_frame(df)
+        return self._get_shifted_data_frame(df)
 
 
 class IntervalAnalyzer(GeneralAnalyzer):

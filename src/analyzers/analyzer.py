@@ -1,8 +1,9 @@
 import pandas as pd
-from functools import cached_property
 import numpy as np
 from analyzers.base_classes import GeneralAnalyzer, IntervalAnalyzer, CombinedAnalyzer
-
+from utils.streamersearcher import StreamerSearcher
+from utils.downtimecalculator import DownTimeCalculator
+from functools import cached_property
 
 class HeinzAnalyzer(IntervalAnalyzer):
     def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None, val_name=None):
@@ -53,7 +54,7 @@ class LifeTimeAnalyzer(GeneralAnalyzer):
                            names=['timestamp', 'lifetime'], header=0)
 
     def _get_modified_data_frame(self, df):
-        df['contamination'] = 0.3/df['lifetime']
+        df['contamination'] = 0.3 / df['lifetime']
         return df
 
 
@@ -65,31 +66,40 @@ class EFieldAnalyzer(GeneralAnalyzer):
 
 class CombinedHeinzAnalyzer(CombinedAnalyzer):
     def _get_modified_data_frame(self, df):
-        df = self._get_decorated_data_frame(df)
-        streamer_searcher = StreamerSearcher()
-        return streamer_searcher.get_decorated_data_frame(df)
+        df = self._decorate_averages(df)
+        df = self._decorate_stable(df)
+        return df
 
-    def _get_decorated_data_frame(self, df):
+    def _decorate_averages(self, df):
         df['avgcurr'] = df['sumcurr'] / df['ncurr']
         df['avgvolt'] = df['sumvolt'] / df['nvolt']
         df['resistance'] = df['avgvolt'] / df['avgcurr']
-        df['efield'] = (df['avgvolt'] - 97*df['avgcurr']) / 360
+        df['efield'] = (df['avgvolt'] - 97 * df['avgcurr']) / 360
         return df
 
-
-class StreamerSearcher:
-    def __init__(self, start_ts=pd.to_datetime("2018-10-05 00:00:00"), end_ts=pd.to_datetime("2018-10-17 12:00:00")):
-        self.start_ts = start_ts
-        self.end_ts = end_ts
-
-    def get_decorated_data_frame(self, df):
-        b_df = df.loc[df.index <= self.start_ts]
-        d_df = df.loc[(df.index > self.start_ts)*(df.index < self.end_ts)]
-        a_df = df.loc[(df.index >= self.end_ts)]
-        b_df['streamer'] = ~((b_df['resistance']>1452) * (b_df['resistance']<1472) * (b_df['avgvolt']>120000))
-        d_df['streamer'] = ~((d_df['resistance']>1465) * (d_df['avgvolt']>120000))
-        a_df['streamer'] = ~((a_df['resistance']>1465) * (a_df['avgvolt']>180000))
+    def _decorate_stable(self, df):
+        start_ts, end_ts = [pd.to_datetime("2018-10-05 00:00:00"), pd.to_datetime("2018-10-17 12:00:00")]
+        b_df = df.loc[df.index <= start_ts]
+        d_df = df.loc[(df.index > start_ts) * (df.index < end_ts)]
+        a_df = df.loc[(df.index >= end_ts)]
+        b_df['stable'] = (b_df['resistance'] > 1452) * (b_df['resistance'] < 1472) * (b_df['avgvolt'] > 120000)
+        d_df['stable'] = (d_df['resistance'] > 1465) * (d_df['avgvolt'] > 120000)
+        a_df['stable'] = (a_df['resistance'] > 1465) * (a_df['avgvolt'] > 180000)
         return pd.concat([b_df, d_df, a_df], axis=0)
+
+    @cached_property
+    def streamer_intervals(self):
+        return StreamerSearcher.get_streamer_intervals(self.data_frame)
+
+    @cached_property
+    def avg_up_time_percentage_dict(self):
+        #dt_calc = DownTimeCalculator(down_intervals=self.streamer_intervals, time_axis=self.data_frame.index)
+        test_intervals = [[pd.Timestamp('2018-09-19 8:02:03'), pd.Timestamp('2018-09-19 09:12:07')],
+                          [pd.Timestamp('2018-09-19 11:47:52'), pd.Timestamp('2018-09-19 11:47:53')],
+                          [pd.Timestamp('2018-09-19 12:00:00'), pd.Timestamp('2018-09-19 13:12:08')]]
+        dt_calc = DownTimeCalculator(down_intervals=test_intervals, time_axis=self.data_frame.index)
+        print(f'dt_calc.data_frame =\n{dt_calc.data_frame}')
+        return dt_calc.avg_up_time_percentage_list
 
 
 
