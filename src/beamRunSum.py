@@ -1,34 +1,23 @@
-# *************************A**********************************************
-#
-# Kevin Wood; November, 2018
-#
-# - Meant to be run with python3:
-#     >> cd /path/to/NP04beamRunSum
-#     >> source setup.sh                 # sets NP04BRSROOT variable
-#     >> python3 scripts/beamRunSum.py
-#
-# - Be sure to double check how time zones are handled. In some cases
-#   datetime uses the system clock to assign a time zone. Time zones
-#   can also be forced by hand.
-#
-# ***********************************************************************
+__author__ = "Lino Gerlach, Kevin Wood"
+__credits__ = [""]
+__version__ = "0.0.1"
+__maintainer__ = "Lino Gerlach"
+__email__ = "lino.oscar.gerlach@cern.ch"
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-import csv
 from datetime import datetime
 from matplotlib import transforms
-import numpy as np
 import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 from datetime import timedelta
 import pandas as pd
-import time as pytime
 import os
 import sys
-from analyzers.analyzer import TriggerAnalyzer, DAQAnalyzer, LifeTimeAnalyzer, HeinzAnalyzer, CombinedHeinzAnalyzer
+from analyzers import ana
+from utils import formatting
 
 startTime = datetime.now()
 
@@ -41,175 +30,28 @@ startTime = datetime.now()
 # datelist = ['2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14']
 # datelist = ['2018-09-14','2018-09-15','2018-09-16','2018-09-17','2018-09-18','2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11']
 
-datelist = ['2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11','2018-11-12']
-#datelist = ['2018-09-19']
+# datelist = ['2018-09-19','2018-09-20','2018-09-21','2018-09-22','2018-09-23','2018-09-24','2018-09-25','2018-09-26','2018-09-27','2018-09-28','2018-09-29','2018-09-30','2018-10-01','2018-10-02','2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07','2018-10-08','2018-10-09','2018-10-10','2018-10-11','2018-10-12','2018-10-13','2018-10-14','2018-10-15','2018-10-16','2018-10-17','2018-10-18','2018-10-19','2018-10-20','2018-10-21','2018-10-22','2018-10-23','2018-10-24','2018-10-25','2018-10-26','2018-10-27','2018-10-28','2018-10-29','2018-10-30','2018-10-31','2018-11-01','2018-11-02','2018-11-03','2018-11-04','2018-11-05','2018-11-06','2018-11-07','2018-11-08','2018-11-09','2018-11-10','2018-11-11','2018-11-12']
+datelist = ['2018-09-19']
+datelist = ['2018-10-16', '2018-10-17', '2018-10-18', '2018-10-19', '2018-10-20', '2018-10-21']
 
-beamperiod = [[datetime(2018, 9, 20, 18, 0, 0), datetime(2018, 9, 26, 8, 0, 0)],
-              [datetime(2018, 9, 26, 18, 0, 0), datetime(2018, 10, 3, 8, 0, 0)],
-              [datetime(2018, 10, 10, 18, 0, 0), datetime(2018, 10, 17, 8, 0, 0)],
-              [datetime(2018, 10, 17, 18, 0, 0), datetime(2018, 10, 18, 8, 0, 0)],
-              [datetime(2018, 10, 18, 18, 0, 0), datetime(2018, 10, 24, 8, 0, 0)],
-              [datetime(2018, 11, 1, 18, 0, 0), datetime(2018, 11, 7, 8, 0, 0)],
-              [datetime(2018, 11, 7, 18, 0, 0), datetime(2018, 11, 12, 8, 0, 0)]]
+file_name = 'data/beamMom.csv'
+analyzer_beam_mom = ana.BeamAnalyzer(file_names=[file_name])
 
-######################
-### Beam Momentum:
-######################
+file_name = 'data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv'
+analyzer_trig = ana.TriggerAnalyzer(file_names=[file_name])
 
-beamMom = [0, 7, 7, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 1, 1, 0, 0, 6, 6, 3, 3, 0, 0, 1, 1, 7, 7, 1, 1, 2, 2, 0.5, 0.5,
-           0.3, 0.3, 0.5, 0.5, 0.3, 0.3, 1, 1, 0]
+file_name = 'data/DAQ-runlist.csv'
+analyzer_daq = ana.DAQAnalyzer(file_names=[file_name], excl_cats=['commissioning', 'calibration'])
 
-beamMom_ts = [datetime(2018, 10, 10, 17, 59, 59),  # 0
-              datetime(2018, 10, 10, 18, 0, 0), datetime(2018, 10, 12, 8, 29, 59),  # 7
-              datetime(2018, 10, 12, 8, 30, 0), datetime(2018, 10, 17, 7, 59, 59),  # 1
-              datetime(2018, 10, 17, 8, 0, 0), datetime(2018, 10, 17, 17, 59, 59),  # 0
-              datetime(2018, 10, 17, 18, 0, 0), datetime(2018, 10, 18, 7, 59, 59),  # 1
-              datetime(2018, 10, 18, 8, 0, 0), datetime(2018, 10, 18, 17, 59, 59),  # 0
-              datetime(2018, 10, 18, 18, 0, 0), datetime(2018, 10, 19, 7, 59, 59),  # 1
-              datetime(2018, 10, 19, 8, 0, 0), datetime(2018, 10, 23, 11, 29, 59),  # 2
-              datetime(2018, 10, 23, 11, 30, 0), datetime(2018, 10, 24, 7, 59, 59),  # 1
-              datetime(2018, 10, 24, 8, 0, 0), datetime(2018, 11, 1, 17, 59, 59),  # 0
-              datetime(2018, 11, 1, 18, 0, 0), datetime(2018, 11, 4, 10, 59, 59),  # 6
-              datetime(2018, 11, 4, 11, 0, 0), datetime(2018, 11, 7, 7, 59, 59),  # 3
-              datetime(2018, 11, 7, 8, 0, 0), datetime(2018, 11, 7, 17, 59, 59),  # 0
-              datetime(2018, 11, 7, 18, 0, 0), datetime(2018, 11, 8, 16, 59, 59),  # 1
-              datetime(2018, 11, 8, 17, 0, 0), datetime(2018, 11, 8, 18, 59, 59),  # 7
-              datetime(2018, 11, 8, 19, 0, 0), datetime(2018, 11, 9, 7, 59, 59),  # 1
-              datetime(2018, 11, 9, 8, 0, 0), datetime(2018, 11, 9, 22, 59, 59),  # 2
-              datetime(2018, 11, 9, 23, 0, 0), datetime(2018, 11, 10, 14, 59, 59),  # 0.5
-              datetime(2018, 11, 10, 15, 0, 0), datetime(2018, 11, 11, 3, 39, 59),  # 0.3
-              datetime(2018, 11, 11, 4, 0, 0), datetime(2018, 11, 11, 14, 29, 59),  # 0.5
-              datetime(2018, 11, 11, 14, 30, 0), datetime(2018, 11, 11, 21, 59, 59),  # 0.3
-              datetime(2018, 11, 11, 22, 00, 0), datetime(2018, 11, 12, 7, 59, 59),  # 1
-              datetime(2018, 11, 12, 8, 0, 0)]
+file_name = 'data/prm_Top_lifetime_data.csv'
+analyzer_lifetime = ana.LifeTimeAnalyzer(file_names=[file_name])
 
-ROOTDIR = os.environ["NP04BRSROOT"]
-
-print('STEPPERLE - 1')
-file_name = ROOTDIR + '/data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv'
-analyzer_trig = TriggerAnalyzer(file_names=[file_name])
-
-print('STEPPERLE - 2')
-file_name = ROOTDIR + '/data/DAQ-runlist.csv'
-analyzer_daq = DAQAnalyzer(file_names=[file_name], excl_cats=['commissioning', 'calibration'])
-
-print('STEPPERLE - 3')
-file_name = ROOTDIR + '/data/prm_Top_lifetime_data.csv'
-analyzer_lifetime = LifeTimeAnalyzer(file_names=[file_name])
-
-print('STEPPERLE - 4')
-file_names = [ROOTDIR + '/data/heinzCurr_' + d + '.csv' for d in datelist]
-analyzer_curr = HeinzAnalyzer(file_names=file_names, val_name='curr')
-file_names = [ROOTDIR + '/data/heinzVolt_' + d + '.csv' for d in datelist]
-analyzer_volt = HeinzAnalyzer(file_names=file_names, val_name='volt')
-comb_ana = CombinedHeinzAnalyzer([analyzer_curr, analyzer_volt])
-
-
-HVcutFile = ROOTDIR + '/data/np04-HVcutPeriods.csv'
-with open(HVcutFile, mode='w') as f:
-    writer = csv.writer(f, delimiter=',')
-df = comb_ana.data_frame
-print(f'df =\n{df}')
-#for i in df.index:
-
-
-
-
-ding = False
-if ding:
-    streamerON = False
-    cutONperiod = []
-    up_bins = []
-    upTime = []
-    upSecCount = 0.
-    totSecCount = 0.
-    binSize = 12  # hours
-    upSC_list = [0.] * 12
-
-    b1 = datetime(2018, 10, 5, 0, 0, 0)
-    b2 = datetime(2018, 10, 17, 12, 0, 0)
-
-    # make HV cut decisions and write to file
-
-    HVcutFile = ROOTDIR + '/data/np04-HVcutPeriods.csv'
-
-    print('STEPPERLE - 4.3')
-
-    with open(HVcutFile, mode='w') as f:
-        writer = csv.writer(f, delimiter=',')
-        for b in tempSB:
-            if not (df.at[b, 'Nvolt'] == 0. or df.at[b, 'Ncurr'] == 0.):
-                vps = df.at[b, 'sumVolt'] / df.at[b, 'Nvolt']
-                cps = df.at[b, 'sumCurr'] / df.at[b, 'Ncurr']
-                e = (vps - 97. * cps) / 360.
-                r = vps / cps
-                eField.append(e)
-                secBins.append(b)
-                # piecewise cut on resistance
-                if b <= b1 and (r > 1472 or r < 1452 or vps < 120000.) and not streamerON:
-                    streamerON = True
-                    startStream = b
-                if b <= b1 and (r > 1452 and r < 1472 and vps > 120000.) and streamerON:
-                    streamerON = False
-                    cutONperiod.append([startStream - timedelta(0, 2), b + timedelta(0, 2)])
-                    writer.writerow([int(pytime.mktime((startStream - timedelta(0, 2)).timetuple())),
-                                     int(pytime.mktime((b + timedelta(0, 2)).timetuple()))])
-
-                if b > b1 and b < b2 and (r < 1465 or vps < 120000.) and not streamerON:
-                    streamerON = True
-                    startStream = b
-                if b > b1 and b < b2 and (r > 1465 and vps > 120000.) and streamerON:
-                    streamerON = False
-                    cutONperiod.append([startStream - timedelta(0, 2), b + timedelta(0, 2)])
-                    writer.writerow([int(pytime.mktime((startStream - timedelta(0, 2)).timetuple())),
-                                     int(pytime.mktime((b + timedelta(0, 2)).timetuple()))])
-
-                if b >= b2 and (r < 1465 or vps < 180000.) and not streamerON:
-                    streamerON = True
-                    startStream = b
-                if b >= b2 and (r > 1465 and vps > 180000.) and streamerON:
-                    streamerON = False
-                    cutONperiod.append([startStream - timedelta(0, 2), b + timedelta(0, 2)])
-                    writer.writerow([int(pytime.mktime((startStream - timedelta(0, 2)).timetuple())),
-                                     int(pytime.mktime((b + timedelta(0, 2)).timetuple()))])
-            totSecCount = totSecCount + 1.
-            if not streamerON:
-                upSecCount = upSecCount + 1.
-            # if totSecCount >= timedelta(hours=binSize).total_seconds():
-            if totSecCount >= timedelta(hours=1).total_seconds():
-                # ut = 100*upSecCount/totSecCount
-                for i in range(12):
-                    upSC_list[i] = upSC_list[i] + upSecCount
-                ut = 100. * upSC_list[11] / timedelta(hours=12).total_seconds()
-                upTime.append(ut)
-                up_bins.append(b - timedelta(hours=int(binSize / 2)))
-                for a in range(11):
-                    upSC_list[11 - a] = upSC_list[10 - a]
-                upSC_list[0] = 0.
-                totSecCount = 0.
-                upSecCount = 0.
-
-        if streamerON:
-            cutONperiod.append([startStream - timedelta(0, 2), tempSB[-1] + timedelta(0, 2)])
-            writer.writerow([int(pytime.mktime((startStream - timedelta(0, 2)).timetuple())),
-                             int(pytime.mktime((b + timedelta(0, 2)).timetuple()))])
-
-else:
-    secBins = [datetime(2018, 9, 17, 0, 0, 0), datetime(2018, 11, 12, 8, 0, 0)]
-    eField = [0., 0.]
-
-print('STEPPERLE - 5')
-streamerON = False
-cutONperiod = []
-up_bins = []
-upTime = []
-upSecCount = 0.
-totSecCount = 0.
-binSize = 12  # hours
-upSC_list = [0.] * 12
-
-b1 = datetime(2018, 10, 5, 0, 0, 0)
-b2 = datetime(2018, 10, 17, 12, 0, 0)
+file_names = ['data/heinzCurr_' + d + '.csv' for d in datelist]
+analyzer_curr = ana.HeinzAnalyzer(file_names=file_names, val_name='curr')
+file_names = ['data/heinzVolt_' + d + '.csv' for d in datelist]
+analyzer_volt = ana.HeinzAnalyzer(file_names=file_names, val_name='volt')
+comb_ana = ana.CombinedHeinzAnalyzer([analyzer_curr, analyzer_volt])
+comb_ana.write_streamer_periods('output/test.csv')
 
 #########################
 ### Plotting:
@@ -281,8 +123,8 @@ a2.spines['left'].set_color('red')
 a2.set_ylim(-30., 630.)
 a2.tick_params(labelbottom=False, left=False)
 
-a3.set_ylabel('HV Status', rotation='horizontal', labelpad=30, va='center')
-a3.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+# a3.set_ylabel('HV Status', rotation='horizontal', labelpad=30, va='center')
+# a3.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
 # a3.yaxis.labelpad = 50
 a3.tick_params(labelbottom=False, left=False, labelleft=False)
 a3.grid(axis='x', color='grey', linestyle='--', linewidth=0.5)
@@ -303,54 +145,20 @@ rect2 = patches.Rectangle((0.6, 1.05), 0.1, 0.1, clip_on=False, facecolor='salmo
 a0.add_patch(rect2)
 a0.text(0.72, 1.07, 'Beam OFF', transform=a0.transAxes)
 
-# plot the data
-[secBins, eField] = comb_ana.data_frame.index, comb_ana.data_frame['efield']
-a2.plot_date(secBins, eField, color='red', markersize=0.15)
-a0.plot(beamMom_ts, beamMom, linewidth=3, markersize=3, color='black')
-[trig_ts, trigCount] = analyzer_trig.data_frame.index, analyzer_trig.data_frame['trig_count_sum']
-BItrig = a0_0.plot_date(trig_ts, trigCount, color='blue', markersize=0., linestyle='solid')
-[aqTrig_ts, aqTrigCount] = analyzer_daq.data_frame.index, analyzer_daq.data_frame['trig_count_sum']
-DAQtrig = a0_0.plot_date(aqTrig_ts, aqTrigCount, color='blue', markersize=0., linestyle='dashed')
-a4.plot_date(up_bins, upTime, color='navy', markersize=0.3, linestyle='solid')
-[etau_ts, etau, contam] = analyzer_lifetime.data_frame.index, analyzer_lifetime.data_frame['lifetime'], analyzer_lifetime.data_frame['contamination']
+
+comb_ana.plot_efield_on_axis(a2)
+analyzer_beam_mom.plot_on_axis(a0)
+BItrig = analyzer_trig.plot_on_axis(a0_0)
+DAQtrig = analyzer_daq.plot_on_axis(a0_0)
+comb_ana.plot_uptime_on_axis(a4)
 if plotContamination:
-    a1.plot_date(etau_ts, contam, linestyle='None', color='darkviolet', marker='o', markersize=3)
-    a1_1.plot_date(etau_ts, contam, linestyle='None', color='darkviolet', marker='o', markersize=3)
-    a1_1.plot_date(etau_ts, contam, linestyle='None', color='darkviolet', marker='o', markersize=0.)
-    a1.set_yscale("log")
-    a1_1.set_yscale("log")
-    a1_bot, a1_top = a1.get_ylim()
-    a1_1.set_ylim(bottom=a1_bot, top=a1_top)
-    # a1.set_yticks([0.05,0.3,0.5,3.0])
-    from matplotlib.ticker import FuncFormatter
-
-
-    def format_fn(tick_val, tick_pos):
-        # tick_val = contamination
-        et = (1. / tick_val) * (0.1 * 3.)
-        return "{0:0.1f}".format(et)
-
-
-    def minorFormat_fn(tick_val, tick_pos):
-        # tick_val = contamination
-        et = (1. / tick_val) * (0.1 * 3.)
-        if tick_val in [0.05, 0.1, 0.5, 1., 5, ] and et > 0.1:
-            return "{0:0.1f}".format(et)
-        elif tick_val in [0.05, 0.1, 0.5, 1., 5, ] and et < 0.1:
-            return "{0:0.2f}".format(et)
-        else:
-            return ''
-
-
-    a1_1.yaxis.set_major_formatter(FuncFormatter(format_fn))
-    a1_1.yaxis.set_minor_formatter(FuncFormatter(minorFormat_fn))
-
+    analyzer_lifetime.plot_contam_on_axis(a1_1)
 else:
-    a1.plot(etau_ts, etau, linestyle='None', color='darkviolet', marker='o', markersize=3)
-    a1.set_yticks([0, 1, 2, 3, 4, 5, 6])
+    analyzer_lifetime.plot_lifetime_on_axis(a1)
 
+
+secBins = comb_ana.data_frame.index
 # cosmetics done after plotting
-
 a0_0.legend((BItrig[0], DAQtrig[0]), ('BI Trigger Count', 'DAQ Trigger Count'))
 a0_0.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 a0_0.set_yticks([0, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000])
@@ -376,7 +184,7 @@ a1.axvspan(secBins[0], secBins[-1], facecolor='salmon', alpha=0.2)
 a2.axvspan(secBins[0], secBins[-1], facecolor='salmon', alpha=0.2)
 a4.axvspan(secBins[0], secBins[-1], facecolor='salmon', alpha=0.2)
 
-for period in beamperiod:
+for period in analyzer_beam_mom.active_periods:
     a0.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
     a1.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
     a2.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
@@ -385,10 +193,8 @@ for period in beamperiod:
 #########################
 ### Streamer Periods:
 #########################
-
 a3.axvspan(secBins[0], secBins[-1], facecolor='green')
-
-for cut in cutONperiod:
+for cut in comb_ana.streamer_intervals:
     a3.axvspan(cut[0], cut[1], facecolor='red')
 
 #########################
@@ -424,6 +230,8 @@ print(datetime.now() - startTime)
 # plt.savefig(ROOTDIR + '/output/beamRunSummary_new.eps', format='eps', dpi=1200)
 # plt.savefig(ROOTDIR + '/output/beamRunSummary_new.svg', format='svg', dpi=1200)
 # plt.savefig(ROOTDIR + '/output/beamRunSummary_new.pdf', format='pdf', dpi=1200)
-plt.savefig(ROOTDIR + '/output/beamRunSummary_new.png', format='png', dpi=1200)
+plt.savefig('output/beamRunSummary_new.png', format='png', dpi=1200)
 # plt.savefig(ROOTDIR + '/output/beamRunSummary_new.ps', format='ps', dpi=1200)
+# plt.show()
+
 plt.show()

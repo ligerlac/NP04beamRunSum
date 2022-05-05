@@ -3,6 +3,7 @@ import numpy as np
 from analyzers import base_classes
 from utils import streamersearcher
 from utils import downtimecalculator
+from utils import formatting
 from functools import cached_property
 import csv
 
@@ -30,6 +31,10 @@ class TriggerAnalyzer(base_classes.GeneralAnalyzer):
         df['trig_count_sum'] = np.cumsum(df['trig_count'])
         return df
 
+    def plot_on_axis(self, axis):
+        return axis.plot(self.data_frame.index, self.data_frame['trig_count_sum'], color='blue',
+                  markersize=0, linestyle='solid')
+
 
 class DAQAnalyzer(base_classes.GeneralAnalyzer):
     def __init__(self, file_names=None, excl_cats=None,
@@ -49,6 +54,10 @@ class DAQAnalyzer(base_classes.GeneralAnalyzer):
         df['trig_count_sum'] = np.cumsum(df['trig_count'])
         return df
 
+    def plot_on_axis(self, axis):
+        return axis.plot(self.data_frame.index, self.data_frame['trig_count_sum'], color='blue',
+                  markersize=0, linestyle='dashed')
+
 
 class LifeTimeAnalyzer(base_classes.GeneralAnalyzer):
     @staticmethod
@@ -59,6 +68,21 @@ class LifeTimeAnalyzer(base_classes.GeneralAnalyzer):
     def _get_modified_data_frame(self, df):
         df['contamination'] = 0.3 / df['lifetime']
         return df
+
+    def plot_lifetime_on_axis(self, axis):
+        axis.plot(self.data_frame.index, self.data_frame['lifetime'], linestyle='None', color='darkviolet', marker='o',
+                  markersize=3)
+        axis.set_yticks([0, 1, 2, 3, 4, 5, 6])
+
+    def plot_contam_on_axis(self, axis):
+        axis.plot(self.data_frame.index, self.data_frame['contamination'], linestyle='None',
+                  color='darkviolet', marker='o', markersize=3)
+        axis.set_yscale("log")
+        a1_bot, a1_top = axis.get_ylim()
+        axis.set_ylim(bottom=a1_bot, top=a1_top)
+        from matplotlib.ticker import FuncFormatter
+        axis.yaxis.set_major_formatter(FuncFormatter(formatting.format_fn))
+        axis.yaxis.set_minor_formatter(FuncFormatter(formatting.minorFormat_fn))
 
 
 class BeamAnalyzer(base_classes.GeneralAnalyzer):
@@ -82,10 +106,13 @@ class BeamAnalyzer(base_classes.GeneralAnalyzer):
                     a = row.Index
         return active_periods
 
-
     def _get_modified_data_frame(self, df):
         df['beam_on'] = df['beam_mom'] > 0
         return df
+
+    def plot_on_axis(self, axis):
+        return axis.plot(self.data_frame.index, self.data_frame['beam_mom'], linewidth=3,
+                         markersize=3, color='black')
 
 
 class EFieldAnalyzer(base_classes.GeneralAnalyzer):
@@ -132,6 +159,15 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
             writer = csv.writer(f, delimiter=',')
             for interval in self.streamer_intervals:
                 writer.writerow(interval)
+
+    def plot_efield_on_axis(self, axis):
+        return axis.plot(self.data_frame.index, self.data_frame['efield'], color='red',
+                         markersize=0.15)
+
+    def plot_uptime_on_axis(self, axis):
+        return axis.plot(self.avg_up_time_data_frame.index, self.avg_up_time_data_frame['avg_up_time'],
+                         color='navy', markersize=0.3, linestyle='solid')
+
 
 
 
