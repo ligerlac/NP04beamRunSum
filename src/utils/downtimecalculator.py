@@ -1,6 +1,7 @@
 from functools import cached_property
 import pandas as pd
 
+
 class DownTimeCalculator:
     def __init__(self, down_intervals=None, time_axis=None, refresh_period=pd.Timedelta(1, "h"),
                  averaging_period=pd.Timedelta(12, "h")):
@@ -59,4 +60,4 @@ class DownTimeCalculator:
 
     @cached_property
     def data_frame(self):
-        return pd.DataFrame({'avgUpTime': self._avg_up_time_percentage_list}, index=self._time_stamps)
+        return pd.DataFrame({'avg_up_time': self._avg_up_time_percentage_list}, index=self._time_stamps)

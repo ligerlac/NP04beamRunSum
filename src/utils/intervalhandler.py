@@ -1,6 +1,7 @@
 from functools import cached_property
 import math
 
+
 class IntervalHandler:
     def __init__(self, interval, first_ts, last_ts):
         self.interval = interval

@@ -2,7 +2,8 @@ import pandas as pd
 from functools import cached_property
 import numpy as np
 import abc
-from utils.intervalhandler import IntervalHandler
+from utils import intervalhandler
+
 
 class GeneralAnalyzer:
     def __init__(self, file_names=None):
@@ -43,7 +44,8 @@ class IntervalAnalyzer(GeneralAnalyzer):
 
     @cached_property
     def interval_handler(self):
-        return IntervalHandler(self.interval, self.data_frame.index[0], self.data_frame.index[-1])
+        return intervalhandler.IntervalHandler(self.interval, self.data_frame.index[0],
+                                               self.data_frame.index[-1])
 
 
 class CombinedAnalyzer:
