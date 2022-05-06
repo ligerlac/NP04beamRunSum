@@ -114,6 +114,12 @@ class BeamAnalyzer(base_classes.GeneralAnalyzer):
         return axis.plot(self.data_frame.index, self.data_frame['beam_mom'], linewidth=3,
                          markersize=3, color='black')
 
+    def color_axes(self, axis_list):
+        for axis in axis_list:
+            axis.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='salmon', alpha=0.2)
+            for period in self.active_periods:
+                axis.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
+
 
 class EFieldAnalyzer(base_classes.GeneralAnalyzer):
     def _get_data_frame_from_file(self, fn):
@@ -167,6 +173,12 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
     def plot_uptime_on_axis(self, axis):
         return axis.plot(self.avg_up_time_data_frame.index, self.avg_up_time_data_frame['avg_up_time'],
                          color='navy', markersize=0.3, linestyle='solid')
+
+    def plot_streamers_on_axis(self, axis):
+        axis.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='green')
+        for cut in self.streamer_intervals:
+            axis.axvspan(cut[0], cut[1], facecolor='red')
+
 
 
 
