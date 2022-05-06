@@ -17,52 +17,60 @@ class SummaryPlot:
         self.fig = None
         self.grid = None
         self.analyzer_group = None
+        self.trig_plot_id = None
+        self.daq_plot_id = None
+        self.output_name = None
         self.create_skeloton()
 
-    def plot(self):
-        self.analyzer_group.comb.plot_efield_on_axis(self.e_field_axis)
-        self.analyzer_group.beam_mom.plot_on_axis(self.beam_mom_axis)
-        BItrig = self.analyzer_group.trig.plot_on_axis(self.trig_count_axis)
-        DAQtrig = self.analyzer_group.daq.plot_on_axis(self.trig_count_axis)
-        self.analyzer_group.comb.plot_uptime_on_axis(self.up_time_axis)
+    def fill_sub_plots(self):
+        self.analyzer_group.comb.plot_efield_on(self.e_field_plot)
+        self.analyzer_group.beam_mom.plot_on(self.beam_mom_plot)
+        self.trig_plot_id = self.analyzer_group.trig.plot_on(self.trig_count_plot)[0]
+        self.daq_plot_id = self.analyzer_group.daq.plot_on(self.trig_count_plot)[0]
+        self.analyzer_group.comb.plot_uptime_on(self.up_time_plot)
         if self.plot_contamination:
-            self.analyzer_group.life_time.plot_contam_on_axis(self.contamination_axis)
+            self.analyzer_group.life_time.plot_contam_on(self.contamination_plot)
         else:
-            self.analyzer_group.life_time.plot_lifetime_on_axis(self.life_time_axis)
-        secBins = self.analyzer_group.comb.data_frame.index
+            self.analyzer_group.life_time.plot_lifetime_on(self.life_time_plot)
 
-        # cosmetics done after plotting
-        self.trig_count_axis.legend((BItrig[0], DAQtrig[0]), ('BI Trigger Count', 'DAQ Trigger Count'))
-        self.trig_count_axis.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-        self.trig_count_axis.set_yticks([0, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000])
-        self.e_field_axis.set_xlim(secBins[0], secBins[-1])
-        self.beam_mom_axis.set_yticks([0, 1, 2, 3, 4, 5, 6, 7])
-        self.up_time_axis.set_yticks([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        self.e_field_axis.set_yticks([0, 100, 200, 300, 400, 500, 600])
+    def apply_cosmetics(self):
+        self.trig_count_plot.legend((self.trig_plot_id, self.daq_plot_id), ('BI Trigger Count', 'DAQ Trigger Count'))
+        self.trig_count_plot.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+        self.trig_count_plot.set_yticks([0, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000])
+        sec_bins = self.analyzer_group.comb.data_frame.index
+        self.e_field_plot.set_xlim(sec_bins[0], sec_bins[-1])
+        self.beam_mom_plot.set_yticks([0, 1, 2, 3, 4, 5, 6, 7])
+        self.up_time_plot.set_yticks([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        self.e_field_plot.set_yticks([0, 100, 200, 300, 400, 500, 600])
 
+    def set_locators(self):
         days = mdates.DayLocator()
-        self.beam_mom_axis.xaxis.set_major_locator(days)
-        self.life_time_axis.xaxis.set_major_locator(days)
-        self.e_field_axis.xaxis.set_major_locator(days)
-        self.hv_stat_axis.xaxis.set_major_locator(days)
-        self.up_time_axis.xaxis.set_major_locator(days)
+        self.beam_mom_plot.xaxis.set_major_locator(days)
+        self.life_time_plot.xaxis.set_major_locator(days)
+        self.e_field_plot.xaxis.set_major_locator(days)
+        self.hv_stat_plot.xaxis.set_major_locator(days)
+        self.up_time_plot.xaxis.set_major_locator(days)
 
+    def plot(self):
+        self.fill_sub_plots()
+        self.apply_cosmetics()
+        self.set_locators()
         self.analyzer_group.beam_mom.color_axes(
-            [self.beam_mom_axis, self.life_time_axis, self.e_field_axis, self.up_time_axis])
-
-        self.analyzer_group.comb.plot_streamers_on_axis(self.hv_stat_axis)
-        plt.savefig('output/beamRunSummary_new.png', format='png', dpi=1200)
+            [self.beam_mom_plot, self.life_time_plot, self.e_field_plot, self.up_time_plot])
+        self.analyzer_group.comb.plot_streamers_on(self.hv_stat_plot)
+        plt.savefig(self.output_name, format='png', dpi=1200)
         plt.show()
 
     @classmethod
     def from_args(cls, args):
         summary_plot = cls()
         summary_plot.plot_contamination = args.plotcontamination
+        summary_plot.output_name = args.output
         return summary_plot
 
     @cached_property
-    def beam_mom_axis(self):
-        a = self.fig.add_subplot(self.grid[0, 0], sharex=self.e_field_axis)
+    def beam_mom_plot(self):
+        a = self.fig.add_subplot(self.grid[0, 0], sharex=self.e_field_plot)
         a.set_ylabel('Beam Momentum\n[GeV/c]', color='black')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
         a.grid(color='grey', linestyle='--', linewidth=0.5)
@@ -70,8 +78,8 @@ class SummaryPlot:
         return a
 
     @cached_property
-    def trig_count_axis(self):
-        a = self.beam_mom_axis.twinx()
+    def trig_count_plot(self):
+        a = self.beam_mom_plot.twinx()
         a.set_ylabel('Beam Trigger Count', color='blue')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
         a.tick_params(axis='y', colors='blue', labelcolor='blue')
@@ -87,8 +95,8 @@ class SummaryPlot:
         return a
 
     @cached_property
-    def contamination_axis(self):
-        a = self.fig.add_subplot(self.grid[1, 0], sharex=self.e_field_axis)
+    def contamination_plot(self):
+        a = self.fig.add_subplot(self.grid[1, 0], sharex=self.e_field_plot)
         a.set_ylabel('Contamination\n' + r'[ppb O$^{2}$ equiv.]', color='darkviolet')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
         a.tick_params(axis='y', which='both', colors='darkviolet', labelcolor='darkviolet')
@@ -104,8 +112,8 @@ class SummaryPlot:
         return a1_1
 
     @cached_property
-    def life_time_axis(self):
-        a = self.fig.add_subplot(self.grid[1, 0], sharex=self.e_field_axis)
+    def life_time_plot(self):
+        a = self.fig.add_subplot(self.grid[1, 0], sharex=self.e_field_plot)
         a.set_ylabel('e- lifetime\n[ms]', color='darkviolet')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
         a.tick_params(axis='y', colors='darkviolet', labelcolor='darkviolet')
@@ -116,7 +124,7 @@ class SummaryPlot:
         return a
 
     @cached_property
-    def e_field_axis(self):
+    def e_field_plot(self):
         a = self.fig.add_subplot(self.grid[2, 0])
         a.set_ylabel('Drift Field\n[V/cm]', color='red')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
@@ -128,15 +136,15 @@ class SummaryPlot:
         return a
 
     @cached_property
-    def hv_stat_axis(self):
-        a = self.fig.add_subplot(self.grid[3, 0], sharex=self.e_field_axis)
+    def hv_stat_plot(self):
+        a = self.fig.add_subplot(self.grid[3, 0], sharex=self.e_field_plot)
         a.tick_params(labelbottom=False, left=False, labelleft=False)
         a.grid(axis='x', color='grey', linestyle='--', linewidth=0.5)
         return a
 
     @cached_property
-    def up_time_axis(self):
-        a = self.fig.add_subplot(self.grid[4, 0], sharex=self.e_field_axis)
+    def up_time_plot(self):
+        a = self.fig.add_subplot(self.grid[4, 0], sharex=self.e_field_plot)
         a.set_ylabel('HV 12-hour Uptime\n[%]', color='navy')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
         a.tick_params(axis='y', colors='navy', labelcolor='navy')
