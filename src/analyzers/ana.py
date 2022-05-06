@@ -149,11 +149,9 @@ class BeamAnalyzer(base_classes.GeneralAnalyzer):
                          markersize=3, color='black')
 
     def color_plots(self, plot_list):
-        print('coloring plots...')
         for plot in plot_list:
             plot.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='salmon', alpha=0.2)
             for period in self.active_periods:
-                print(f'preiod = {period}')
                 plot.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
 
 

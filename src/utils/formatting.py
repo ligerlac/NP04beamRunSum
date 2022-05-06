@@ -1,3 +1,10 @@
+__author__ = "Lino Gerlach, Kevin Wood"
+__credits__ = [""]
+__version__ = "0.0.1"
+__maintainer__ = "Lino Gerlach"
+__email__ = "lino.oscar.gerlach@cern.ch"
+
+
 def format_fn(tick_val, tick_pos):
     # tick_val = contamination
     et = (1. / tick_val) * (0.1 * 3.)

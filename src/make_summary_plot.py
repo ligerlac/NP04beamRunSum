@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--plotcontamination", default=False, action="store_true",
                         help="activate to plot contamination instead of lifetime")
-    parser.add_argument("--datelist", type=list, default=['2018-10-16', '2018-10-17', '2018-10-18',
+    parser.add_argument("--datelist", nargs="+", default=['2018-10-16', '2018-10-17', '2018-10-18',
                                                           '2018-10-19', '2018-10-20', '2018-10-21'],
                         help="dates to consider")
     parser.add_argument("--debug", default=False, action="store_true", help="activate debug level logging")

@@ -1,3 +1,9 @@
+__author__ = "Lino Gerlach, Kevin Wood"
+__credits__ = [""]
+__version__ = "0.0.1"
+__maintainer__ = "Lino Gerlach"
+__email__ = "lino.oscar.gerlach@cern.ch"
+
 import pandas as pd
 
 

@@ -55,7 +55,7 @@ class SummaryPlot:
         self.fill_sub_plots()
         self.apply_cosmetics()
         self.set_locators()
-        self.analyzer_group.beam_mom.color_axes(
+        self.analyzer_group.beam_mom.color_plots(
             [self.beam_mom_plot, self.life_time_plot, self.e_field_plot, self.up_time_plot])
         self.analyzer_group.comb.plot_streamers_on(self.hv_stat_plot)
         plt.savefig(self.output_name, format='png', dpi=1200)
@@ -158,3 +158,5 @@ class SummaryPlot:
         self.grid = gridspec.GridSpec(ncols=1, nrows=5, figure=self.fig,
                                       height_ratios=[2, 1.5, 1.5, 0.2, 1.5])
         self.fig.subplots_adjust(left=0.06, bottom=0.1, right=0.94, top=0.93, wspace=None, hspace=0.)
+
+

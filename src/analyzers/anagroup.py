@@ -5,6 +5,7 @@ __maintainer__ = "Lino Gerlach"
 __email__ = "lino.oscar.gerlach@cern.ch"
 
 from analyzers import ana
+import config
 
 
 class AnalyzerGroup:
@@ -20,7 +21,10 @@ class AnalyzerGroup:
     @classmethod
     def from_args(cls, args):
         ana_group = cls()
-        date_list = args.datelist
+        if not args.datelist:
+            date_list = config.all_date_list
+        else:
+            date_list = args.datelist
         ana_group.beam_mom = ana.BeamAnalyzer(file_names=['data/beamMom.csv'])
         ana_group.trig = ana.TriggerAnalyzer(file_names=['data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv'])
         ana_group.daq = ana.DAQAnalyzer(file_names=['data/DAQ-runlist.csv'],
@@ -43,9 +47,11 @@ class HeinzGroup:
     @classmethod
     def from_args(cls, args):
         ana_group = cls()
-        date_list = args.datelist
+        if not args.datelist:
+            date_list = config.all_date_list
+        else:
+            date_list = args.datelist
         ana_group.beam_mom = ana.BeamAnalyzer(file_names=['data/beamMom.csv'])
         ana_group.curr = ana.CurrAnalyzer(file_names=['data/heinzCurr_' + d + '.csv' for d in date_list])
         ana_group.volt = ana.VoltAnalyzer(file_names=['data/heinzVolt_' + d + '.csv' for d in date_list])
         return ana_group
-
