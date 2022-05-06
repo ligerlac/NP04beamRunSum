@@ -1,3 +1,9 @@
+__author__ = "Lino Gerlach, Kevin Wood"
+__credits__ = [""]
+__version__ = "0.0.1"
+__maintainer__ = "Lino Gerlach"
+__email__ = "lino.oscar.gerlach@cern.ch"
+
 import pandas as pd
 import numpy as np
 from analyzers import base_classes
@@ -22,6 +28,34 @@ class HeinzAnalyzer(base_classes.IntervalAnalyzer):
         return df
 
 
+class CurrAnalyzer(HeinzAnalyzer):
+    def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None):
+        super().__init__(interval=interval, file_names=file_names)
+        self.val_name = 'curr'
+
+    def plot_on(self, plot):
+        return plot.plot_date(self.data_frame.index, self.data_frame[self.val_name], color='red',
+                  markersize=0.15, linestyle='solid')
+
+    def plot_std_on(self, plot):
+        return plot.plot_date(self.interval_handler.mean_time_stamps, self.val_std_array, color='darkviolet',
+                  markersize=0.5)
+
+
+class VoltAnalyzer(HeinzAnalyzer):
+    def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None):
+        super().__init__(interval=interval, file_names=file_names)
+        self.val_name = 'volt'
+
+    def plot_on(self, plot):
+        return plot.plot_date(self.data_frame.index, self.data_frame[self.val_name], color='blue',
+                  markersize=0.15, linestyle='solid')
+
+    def plot_std_on(self, plot):
+        return plot.plot_date(self.interval_handler.mean_time_stamps, self.val_std_array, color='green',
+                  markersize=0.5)
+
+
 class TriggerAnalyzer(base_classes.GeneralAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 2],
@@ -31,8 +65,8 @@ class TriggerAnalyzer(base_classes.GeneralAnalyzer):
         df['trig_count_sum'] = np.cumsum(df['trig_count'])
         return df
 
-    def plot_on(self, axis):
-        return axis.plot(self.data_frame.index, self.data_frame['trig_count_sum'], color='blue',
+    def plot_on(self, plot):
+        return plot.plot(self.data_frame.index, self.data_frame['trig_count_sum'], color='blue',
                   markersize=0, linestyle='solid')
 
 
@@ -54,8 +88,8 @@ class DAQAnalyzer(base_classes.GeneralAnalyzer):
         df['trig_count_sum'] = np.cumsum(df['trig_count'])
         return df
 
-    def plot_on(self, axis):
-        return axis.plot(self.data_frame.index, self.data_frame['trig_count_sum'], color='blue',
+    def plot_on(self, plot):
+        return plot.plot(self.data_frame.index, self.data_frame['trig_count_sum'], color='blue',
                   markersize=0, linestyle='dashed')
 
 
@@ -69,20 +103,20 @@ class LifeTimeAnalyzer(base_classes.GeneralAnalyzer):
         df['contamination'] = 0.3 / df['lifetime']
         return df
 
-    def plot_lifetime_on(self, axis):
-        axis.plot(self.data_frame.index, self.data_frame['lifetime'], linestyle='None', color='darkviolet', marker='o',
+    def plot_lifetime_on(self, plot):
+        plot.plot(self.data_frame.index, self.data_frame['lifetime'], linestyle='None', color='darkviolet', marker='o',
                   markersize=3)
-        axis.set_yticks([0, 1, 2, 3, 4, 5, 6])
+        plot.set_yticks([0, 1, 2, 3, 4, 5, 6])
 
-    def plot_contam_on(self, axis):
-        axis.plot(self.data_frame.index, self.data_frame['contamination'], linestyle='None',
+    def plot_contam_on(self, plot):
+        plot.plot(self.data_frame.index, self.data_frame['contamination'], linestyle='None',
                   color='darkviolet', marker='o', markersize=3)
-        axis.set_yscale("log")
-        a1_bot, a1_top = axis.get_ylim()
-        axis.set_ylim(bottom=a1_bot, top=a1_top)
+        plot.set_yscale("log")
+        a1_bot, a1_top = plot.get_ylim()
+        plot.set_ylim(bottom=a1_bot, top=a1_top)
         from matplotlib.ticker import FuncFormatter
-        axis.yaxis.set_major_formatter(FuncFormatter(formatting.format_fn))
-        axis.yaxis.set_minor_formatter(FuncFormatter(formatting.minorFormat_fn))
+        plot.yaxis.set_major_formatter(FuncFormatter(formatting.format_fn))
+        plot.yaxis.set_minor_formatter(FuncFormatter(formatting.minorFormat_fn))
 
 
 class BeamAnalyzer(base_classes.GeneralAnalyzer):
@@ -110,15 +144,17 @@ class BeamAnalyzer(base_classes.GeneralAnalyzer):
         df['beam_on'] = df['beam_mom'] > 0
         return df
 
-    def plot_on(self, axis):
-        return axis.plot(self.data_frame.index, self.data_frame['beam_mom'], linewidth=3,
+    def plot_on(self, plot):
+        return plot.plot(self.data_frame.index, self.data_frame['beam_mom'], linewidth=3,
                          markersize=3, color='black')
 
-    def color_axes(self, axis_list):
-        for axis in axis_list:
-            axis.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='salmon', alpha=0.2)
+    def color_plots(self, plot_list):
+        print('coloring plots...')
+        for plot in plot_list:
+            plot.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='salmon', alpha=0.2)
             for period in self.active_periods:
-                axis.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
+                print(f'preiod = {period}')
+                plot.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
 
 
 class EFieldAnalyzer(base_classes.GeneralAnalyzer):
@@ -166,21 +202,15 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
             for interval in self.streamer_intervals:
                 writer.writerow(interval)
 
-    def plot_efield_on(self, axis):
-        return axis.plot(self.data_frame.index, self.data_frame['efield'], color='red',
+    def plot_efield_on(self, plot):
+        return plot.plot(self.data_frame.index, self.data_frame['efield'], color='red',
                          markersize=0.15)
 
-    def plot_uptime_on(self, axis):
-        return axis.plot(self.avg_up_time_data_frame.index, self.avg_up_time_data_frame['avg_up_time'],
+    def plot_uptime_on(self, plot):
+        return plot.plot(self.avg_up_time_data_frame.index, self.avg_up_time_data_frame['avg_up_time'],
                          color='navy', markersize=0.3, linestyle='solid')
 
-    def plot_streamers_on(self, axis):
-        axis.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='green')
+    def plot_streamers_on(self, plot):
+        plot.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='green')
         for cut in self.streamer_intervals:
-            axis.axvspan(cut[0], cut[1], facecolor='red')
-
-
-
-
-
-
+            plot.axvspan(cut[0], cut[1], facecolor='red')

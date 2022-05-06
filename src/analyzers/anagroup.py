@@ -1,3 +1,9 @@
+__author__ = "Lino Gerlach, Kevin Wood"
+__credits__ = [""]
+__version__ = "0.0.1"
+__maintainer__ = "Lino Gerlach"
+__email__ = "lino.oscar.gerlach@cern.ch"
+
 from analyzers import ana
 
 
@@ -26,3 +32,20 @@ class AnalyzerGroup:
                                            val_name='volt')
         ana_group.comb = ana.CombinedHeinzAnalyzer([ana_group.curr, ana_group.volt])
         return ana_group
+
+
+class HeinzGroup:
+    def __init__(self):
+        self.curr = None
+        self.volt = None
+        self.beam_mom = None
+
+    @classmethod
+    def from_args(cls, args):
+        ana_group = cls()
+        date_list = args.datelist
+        ana_group.beam_mom = ana.BeamAnalyzer(file_names=['data/beamMom.csv'])
+        ana_group.curr = ana.CurrAnalyzer(file_names=['data/heinzCurr_' + d + '.csv' for d in date_list])
+        ana_group.volt = ana.VoltAnalyzer(file_names=['data/heinzVolt_' + d + '.csv' for d in date_list])
+        return ana_group
+
