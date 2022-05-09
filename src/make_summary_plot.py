@@ -8,6 +8,7 @@ import argparse
 import logging
 from plotting import summaryplot
 from analyzers import anagroup
+from datetime import datetime
 
 
 def main(args):
@@ -16,6 +17,7 @@ def main(args):
     summary_plot = summaryplot.SummaryPlot.from_args(args)
     summary_plot.analyzer_group = analyzer_group
     summary_plot.plot()
+    analyzer_group.comb.write_streamer_periods('data/np04_hv_cut_periods.csv')
 
 
 if __name__ == '__main__':

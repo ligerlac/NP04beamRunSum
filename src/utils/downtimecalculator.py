@@ -11,7 +11,7 @@ import pandas as pd
 class DownTimeCalculator:
     def __init__(self, down_intervals=None, time_axis=None, refresh_period=pd.Timedelta(1, "h"),
                  averaging_period=pd.Timedelta(12, "h")):
-        self._down_intervals = down_intervals
+        self._down_intervals = [x for x in down_intervals]
         self._time_axis = time_axis
         self._refresh_period = refresh_period
         self._averaging_period = averaging_period

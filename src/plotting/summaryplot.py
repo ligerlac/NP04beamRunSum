@@ -9,6 +9,7 @@ import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 from functools import cached_property
+from datetime import datetime
 
 
 class SummaryPlot:
@@ -29,7 +30,7 @@ class SummaryPlot:
         self.daq_plot_id = self.analyzer_group.daq.plot_on(self.trig_count_plot)[0]
         self.analyzer_group.comb.plot_uptime_on(self.up_time_plot)
         if self.plot_contamination:
-            self.analyzer_group.life_time.plot_contam_on(self.contamination_plot)
+            self.analyzer_group.life_time.plot_contam_on(self.life_time_plot)
         else:
             self.analyzer_group.life_time.plot_lifetime_on(self.life_time_plot)
 
@@ -46,20 +47,23 @@ class SummaryPlot:
     def set_locators(self):
         days = mdates.DayLocator()
         self.beam_mom_plot.xaxis.set_major_locator(days)
-        self.life_time_plot.xaxis.set_major_locator(days)
+        #self.life_time_plot.xaxis.set_major_locator(days)
         self.e_field_plot.xaxis.set_major_locator(days)
         self.hv_stat_plot.xaxis.set_major_locator(days)
         self.up_time_plot.xaxis.set_major_locator(days)
 
     def plot(self):
+        startTime = datetime.now()
         self.fill_sub_plots()
         self.apply_cosmetics()
         self.set_locators()
         self.analyzer_group.beam_mom.color_plots(
             [self.beam_mom_plot, self.life_time_plot, self.e_field_plot, self.up_time_plot])
         self.analyzer_group.comb.plot_streamers_on(self.hv_stat_plot)
-        plt.savefig(self.output_name, format='png', dpi=1200)
-        plt.show()
+        print('run time [s]')
+        print(datetime.now() - startTime)
+#        plt.savefig(self.output_name, format='png', dpi=1200)
+#        plt.show()
 
     @classmethod
     def from_args(cls, args):
@@ -94,8 +98,7 @@ class SummaryPlot:
         a.text(0.72, 1.07, 'Beam OFF', transform=a.transAxes)
         return a
 
-    @cached_property
-    def contamination_plot(self):
+    def _get_contamination_plot(self):
         a = self.fig.add_subplot(self.grid[1, 0], sharex=self.e_field_plot)
         a.set_ylabel('Contamination\n' + r'[ppb O$^{2}$ equiv.]', color='darkviolet')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
@@ -111,8 +114,7 @@ class SummaryPlot:
         a1_1.spines['right'].set_color('darkviolet')
         return a1_1
 
-    @cached_property
-    def life_time_plot(self):
+    def _get_life_time_plot(self):
         a = self.fig.add_subplot(self.grid[1, 0], sharex=self.e_field_plot)
         a.set_ylabel('e- lifetime\n[ms]', color='darkviolet')
         a.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
@@ -122,6 +124,13 @@ class SummaryPlot:
         a.spines['left'].set_color('darkviolet')
         a.tick_params(labelbottom=False)
         return a
+
+    @cached_property
+    def life_time_plot(self):
+        if self.plot_contamination:
+            return self._get_contamination_plot()
+        else:
+            return self._get_life_time_plot()
 
     @cached_property
     def e_field_plot(self):

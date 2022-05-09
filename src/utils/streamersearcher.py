@@ -7,21 +7,30 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 import pandas as pd
 
 
-def get_streamer_intervals(df):
-    streamer_intervals = []
+def _get_streamer_ts_list(df):
     df = df.loc[df['nvolt'] * df['ncurr'] != 0]
-    streamer_on = False
+    df = df.loc[df['stable'] == False]
+    streamer_ts_set = set()
     for row in df.itertuples(index=True, name='Pandas'):
-        if streamer_on:
-            if row.stable:
-                streamer_on = False
-                b = row.Index + pd.Timedelta(2, "s")
-                if len(streamer_intervals) != 0 and streamer_intervals[-1][1] > a:
-                    streamer_intervals[-1][1] = b
-                else:
-                    streamer_intervals.append([a, b])
-        else:
-            if not row.stable:
-                streamer_on = True
-                a = row.Index - pd.Timedelta(2, "s")
+        streamer_ts_temp = set([row.Index + i*pd.Timedelta(1, "s") for i in range(-2, 3)])
+        streamer_ts_set = streamer_ts_set.union(streamer_ts_temp)
+    streamer_ts_list = list(streamer_ts_set)
+    streamer_ts_list.sort()
+    return streamer_ts_list
+
+
+def _get_streamer_intervals_from_ts_list(ts_list):
+    streamer_intervals = []
+    a = ts_list[0]
+    for i in range(len(ts_list)-1):
+        if ts_list[i+1] != ts_list[i] + pd.Timedelta(1, "s"):
+            streamer_intervals.append([a, ts_list[i]])
+            a = ts_list[i+1]
+    streamer_intervals.append([a, ts_list[-1]])
     return streamer_intervals
+
+
+def get_streamer_intervals(df):
+    streamer_ts_list = _get_streamer_ts_list(df)
+    return _get_streamer_intervals_from_ts_list(streamer_ts_list)
+

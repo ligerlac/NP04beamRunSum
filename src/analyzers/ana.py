@@ -182,6 +182,7 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
         b_df['stable'] = (b_df['resistance'] > 1452) * (b_df['resistance'] < 1472) * (b_df['avgvolt'] > 120000)
         d_df['stable'] = (d_df['resistance'] > 1465) * (d_df['avgvolt'] > 120000)
         a_df['stable'] = (a_df['resistance'] > 1465) * (a_df['avgvolt'] > 180000)
+        print(f'b_df.loc[df.index==pd.to_datetime("2018-09-26 13:01:46")] =\n{b_df.loc[df.index==pd.to_datetime("2018-09-26 13:01:46")]}')
         return pd.concat([b_df, d_df, a_df], axis=0)
 
     @cached_property
@@ -191,13 +192,15 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
     @cached_property
     def avg_up_time_data_frame(self):
         dt_calc = downtimecalculator.DownTimeCalculator(down_intervals=self.streamer_intervals,
-                                     time_axis=self.data_frame.index)
+                                                        time_axis=self.data_frame.index)
         return dt_calc.data_frame
 
     def write_streamer_periods(self, file_name):
         with open(file_name, mode='w') as f:
             writer = csv.writer(f, delimiter=',')
+            print(f'self.streamer_intervals = {self.streamer_intervals}')
             for interval in self.streamer_intervals:
+                print(f'writing interval {interval}')
                 writer.writerow(interval)
 
     def plot_efield_on(self, plot):
@@ -210,5 +213,6 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
 
     def plot_streamers_on(self, plot):
         plot.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='green')
+        print(f'plot_streamers_on: self.streamer_intervals = {self.streamer_intervals}')
         for cut in self.streamer_intervals:
             plot.axvspan(cut[0], cut[1], facecolor='red')
