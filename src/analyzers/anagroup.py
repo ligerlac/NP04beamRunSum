@@ -21,19 +21,14 @@ class AnalyzerGroup:
     @classmethod
     def from_args(cls, args):
         ana_group = cls()
-        if not args.datelist:
-            date_list = config.all_date_list
-        else:
-            date_list = args.datelist
-        ana_group.beam_mom = ana.BeamAnalyzer(file_names=['data/beamMom.csv'])
-        ana_group.trig = ana.TriggerAnalyzer(file_names=['data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv'])
-        ana_group.daq = ana.DAQAnalyzer(file_names=['data/DAQ-runlist.csv'],
+        file_names = config.InputFileNames(args.datelist)
+        ana_group.beam_mom = ana.BeamAnalyzer(file_names=file_names.beam_mom)
+        ana_group.trig = ana.TriggerAnalyzer(file_names=file_names.trig)
+        ana_group.daq = ana.DAQAnalyzer(file_names=file_names.daq,
                                         excl_cats=['commissioning', 'calibration'])
-        ana_group.life_time = ana.LifeTimeAnalyzer(file_names=['data/prm_Top_lifetime_data.csv'])
-        ana_group.curr = ana.HeinzAnalyzer(file_names=['data/heinzCurr_' + d + '.csv' for d in date_list],
-                                           val_name='curr')
-        ana_group.volt = ana.HeinzAnalyzer(file_names=['data/heinzVolt_' + d + '.csv' for d in date_list],
-                                           val_name='volt')
+        ana_group.life_time = ana.LifeTimeAnalyzer(file_names=file_names.life_time)
+        ana_group.curr = ana.HeinzAnalyzer(file_names=file_names.curr, val_name='curr')
+        ana_group.volt = ana.HeinzAnalyzer(file_names=file_names.volt, val_name='volt')
         ana_group.comb = ana.CombinedHeinzAnalyzer([ana_group.curr, ana_group.volt])
         return ana_group
 
@@ -47,11 +42,8 @@ class HeinzGroup:
     @classmethod
     def from_args(cls, args):
         ana_group = cls()
-        if not args.datelist:
-            date_list = config.all_date_list
-        else:
-            date_list = args.datelist
-        ana_group.beam_mom = ana.BeamAnalyzer(file_names=['data/beamMom.csv'])
-        ana_group.curr = ana.CurrAnalyzer(file_names=['data/heinzCurr_' + d + '.csv' for d in date_list])
-        ana_group.volt = ana.VoltAnalyzer(file_names=['data/heinzVolt_' + d + '.csv' for d in date_list])
+        file_names = config.InputFileNames(args.datelist)
+        ana_group.beam_mom = ana.BeamAnalyzer(file_names=file_names.beam_mom)
+        ana_group.curr = ana.HeinzAnalyzer(file_names=file_names.curr, val_name='curr')
+        ana_group.volt = ana.HeinzAnalyzer(file_names=file_names.volt, val_name='volt')
         return ana_group

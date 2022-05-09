@@ -15,3 +15,17 @@ all_date_list = ['2018-09-14', '2018-09-15', '2018-09-16', '2018-09-17', '2018-0
                  '2018-10-26', '2018-10-27', '2018-10-28', '2018-10-29', '2018-10-30', '2018-10-31',
                  '2018-11-01', '2018-11-02', '2018-11-03', '2018-11-04', '2018-11-05', '2018-11-06',
                  '2018-11-07', '2018-11-08', '2018-11-09', '2018-11-10', '2018-11-11', '2018-11-12']
+
+
+class InputFileNames:
+    def __init__(self, date_list=None):
+        if date_list is None:
+            self.date_list = all_date_list
+        else:
+            self.date_list = date_list
+        self.beam_mom = ['data/beamMom.csv']
+        self.trig = ['data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv']
+        self.daq = ['data/DAQ-runlist.csv']
+        self.life_time = ['data/prm_Top_lifetime_data.csv']
+        self.curr = ['data/heinzCurr_' + d + '.csv' for d in self.date_list]
+        self.volt = ['data/heinzVolt_' + d + '.csv' for d in self.date_list]
