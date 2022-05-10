@@ -24,7 +24,7 @@ class GeneralAnalyzer:
         return df
 
     def _get_shifted_data_frame(self, data_frame):
-        data_frame['timestamp'] = pd.to_datetime(data_frame.index).shift(1, freq='H')
+        data_frame['timestamp'] = pd.to_datetime(data_frame.index)#.shift(1, freq='H')
         return data_frame.set_index('timestamp')
 
     @cached_property

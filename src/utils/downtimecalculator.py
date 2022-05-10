@@ -26,10 +26,16 @@ class DownTimeCalculator:
 
     @cached_property
     def _time_stamps(self):
+        #return pd.date_range(self._time_axis[0], self._time_axis[-1], freq="1H")
         return [self._time_axis[0] + i * self._refresh_period for i in range(self._n_bins)]
+
+    def _get_plot_stamps(self):
+        #return self._time_stamps.shift(-1/2, freq="12H")
+        return [x - self._averaging_period/2 for x in self._time_stamps]
 
     @cached_property
     def _down_time_list(self):
+        # this assumes that streamer intervals don't overlap
         down_time_list = [pd.Timedelta(0, "h")] * self._n_bins
         for i, ts in enumerate(self._time_stamps):
             n_ts = ts + self._refresh_period
@@ -66,4 +72,4 @@ class DownTimeCalculator:
 
     @cached_property
     def data_frame(self):
-        return pd.DataFrame({'avg_up_time': self._avg_up_time_percentage_list}, index=self._time_stamps)
+        return pd.DataFrame({'avg_up_time': self._avg_up_time_percentage_list}, index=self._get_plot_stamps())

@@ -8,7 +8,6 @@ import argparse
 import logging
 from plotting import summaryplot
 from analyzers import anagroup
-from datetime import datetime
 
 
 def main(args):

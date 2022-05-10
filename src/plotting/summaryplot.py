@@ -62,7 +62,7 @@ class SummaryPlot:
         self.analyzer_group.comb.plot_streamers_on(self.hv_stat_plot)
         print('run time [s]')
         print(datetime.now() - startTime)
-#        plt.savefig(self.output_name, format='png', dpi=1200)
+        plt.savefig(self.output_name, format='png', dpi=1200)
 #        plt.show()
 
     @classmethod

@@ -8,7 +8,10 @@ import pandas as pd
 from datetime import datetime
 
 
-def get_streamer_intervals(df):
+def get_streamer_intervals(df, sideband=pd.Timedelta(2, "s")):
+    # exactly reproducing kevin's results:
+    # the sideband is actually (-2, +3) secs
+    # also, intervals can overlap
     streamer_intervals = []
     df = df.loc[df['nvolt'] * df['ncurr'] != 0]
     streamer_on = False
@@ -16,15 +19,18 @@ def get_streamer_intervals(df):
         if streamer_on:
             if row.stable:
                 streamer_on = False
-                b = row.Index + pd.Timedelta(2, "s")
-                if len(streamer_intervals) != 0 and streamer_intervals[-1][1] > a:
-                    streamer_intervals[-1][1] = b
-                else:
-                    streamer_intervals.append([a, b])
+                b = row.Index + sideband
+#                if len(streamer_intervals) != 0 and streamer_intervals[-1][1] > a:
+#                    streamer_intervals[-1][1] = b
+#                else:
+#                    streamer_intervals.append([a, b])
+                streamer_intervals.append([a, b])
         else:
             if not row.stable:
                 streamer_on = True
-                a = row.Index - pd.Timedelta(2, "s")
+                a = row.Index - sideband
+    if streamer_on:
+        streamer_intervals.append([a, df.index[-1]])
     return streamer_intervals
 
 
