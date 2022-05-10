@@ -1,4 +1,4 @@
-__author__ = "Lino Gerlach, Kevin Wood"
+__author__ = "Lino Gerlach"
 __credits__ = [""]
 __version__ = "0.0.1"
 __maintainer__ = "Lino Gerlach"
@@ -8,6 +8,10 @@ import argparse
 import logging
 from plotting import durationplot
 from analyzers import ana
+import numpy as np
+import pandas as pd
+import sys
+from matplotlib import pyplot as plt
 
 
 def main(args):

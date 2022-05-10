@@ -30,12 +30,19 @@ class GeneralAnalyzer:
     @cached_property
     def data_frame(self):
         df = pd.concat([self._get_data_frame_from_file(fn) for fn in self.file_names], axis=0)
+        return self._get_modified_data_frame(df)
+
+
+class TimeStampedAnalyzer(GeneralAnalyzer):
+    @cached_property
+    def data_frame(self):
+        df = pd.concat([self._get_data_frame_from_file(fn) for fn in self.file_names], axis=0)
         df = self._get_modified_data_frame(df)
-        return df
-        #return self._get_shifted_data_frame(df)
+        df['timestamp'] = pd.to_datetime(df.index)
+        return df.set_index('timestamp')
 
 
-class IntervalAnalyzer(GeneralAnalyzer):
+class IntervalAnalyzer(TimeStampedAnalyzer):
     def __init__(self, file_names=None, interval=pd.Timedelta(30, "m")):
         super().__init__(file_names=file_names)
         self.interval = interval

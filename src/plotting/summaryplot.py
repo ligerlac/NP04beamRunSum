@@ -10,6 +10,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 from functools import cached_property
 from datetime import datetime
+from utils import formatting
 
 
 class SummaryPlot:
@@ -23,16 +24,70 @@ class SummaryPlot:
         self.output_name = None
         self.create_skeloton()
 
+    def plot_e_field(self):
+        self.e_field_plot.plot(self.analyzer_group.comb.data_frame.index,
+                               self.analyzer_group.comb.data_frame['efield'],
+                               color='red', markersize=0.15)
+
+    def plot_beam_mom(self):
+        self.beam_mom_plot.plot(self.analyzer_group.beam_mom.data_frame.index,
+                                self.analyzer_group.beam_mom.data_frame['beam_mom'],
+                                linewidth=3, markersize=3, color='black')
+
+    def color_plots(self):
+        plot_list = [self.beam_mom_plot, self.life_time_plot, self.e_field_plot, self.up_time_plot]
+        for plot in plot_list:
+            plot.axvspan(self.analyzer_group.beam_mom.data_frame.index[0],
+                         self.analyzer_group.beam_mom.data_frame.index[-1],
+                         facecolor='salmon', alpha=0.2)
+            for period in self.analyzer_group.beam_mom.active_periods:
+                plot.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
+
+    def plot_trig(self):
+        self.trig_plot_id = self.trig_count_plot.plot(self.analyzer_group.trig.data_frame.index,
+                                                 self.analyzer_group.trig.data_frame['trig_count_sum'],
+                                                 color='blue', markersize=0, linestyle='solid')[0]
+
+    def plot_daq(self):
+        self.daq_plot_id = self.trig_count_plot.plot(self.analyzer_group.daq.data_frame.index,
+                                                     self.analyzer_group.daq.data_frame['trig_count_sum'],
+                                                     color='blue', markersize=0, linestyle='dashed')
+
+    def plot_up_time(self):
+        self.up_time_plot.plot(self.analyzer_group.comb.avg_up_time_data_frame.index,
+                               self.analyzer_group.comb.avg_up_time_data_frame['avg_up_time'],
+                               color='navy', markersize=0.3, linestyle='solid')
+
+
+    def plot_lifetime(self):
+        self.life_time_plot.plot(self.analyzer_group.data_frame.index,
+                            self.analyzer_group.data_frame['lifetime'],
+                            linestyle='None', color='darkviolet', marker='o', markersize=3)
+        self.life_time_plot.set_yticks([0, 1, 2, 3, 4, 5, 6])
+
+
+    def plot_contam(self):
+        self.life_time_plot.plot(self.analyzer_group.life_time.data_frame.index,
+                                 self.analyzer_group.life_time.data_frame['contamination'],
+                                 linestyle='None', color='darkviolet', marker='o', markersize=3)
+        self.life_time_plot.set_yscale("log")
+        a1_bot, a1_top = self.life_time_plot.get_ylim()
+        self.life_time_plot.set_ylim(bottom=a1_bot, top=a1_top)
+        from matplotlib.ticker import FuncFormatter
+        self.life_time_plot.yaxis.set_major_formatter(FuncFormatter(formatting.format_fn))
+        self.life_time_plot.yaxis.set_minor_formatter(FuncFormatter(formatting.minorFormat_fn))
+
+
     def fill_sub_plots(self):
-        self.analyzer_group.comb.plot_efield_on(self.e_field_plot)
-        self.analyzer_group.beam_mom.plot_on(self.beam_mom_plot)
-        self.trig_plot_id = self.analyzer_group.trig.plot_on(self.trig_count_plot)[0]
-        self.daq_plot_id = self.analyzer_group.daq.plot_on(self.trig_count_plot)[0]
-        self.analyzer_group.comb.plot_uptime_on(self.up_time_plot)
+        self.plot_e_field()
+        self.plot_beam_mom()
+        self.plot_trig()
+        self.plot_daq()
+        self.plot_up_time()
         if self.plot_contamination:
-            self.analyzer_group.life_time.plot_contam_on(self.life_time_plot)
+            self.plot_contam()
         else:
-            self.analyzer_group.life_time.plot_lifetime_on(self.life_time_plot)
+            self.plot_lifetime()
 
     def apply_cosmetics(self):
         self.trig_count_plot.legend((self.trig_plot_id, self.daq_plot_id), ('BI Trigger Count', 'DAQ Trigger Count'))
@@ -57,8 +112,7 @@ class SummaryPlot:
         self.fill_sub_plots()
         self.apply_cosmetics()
         self.set_locators()
-        self.analyzer_group.beam_mom.color_plots(
-            [self.beam_mom_plot, self.life_time_plot, self.e_field_plot, self.up_time_plot])
+        self.color_plots()
         self.analyzer_group.comb.plot_streamers_on(self.hv_stat_plot)
         print('run time [s]')
         print(datetime.now() - startTime)
@@ -167,5 +221,3 @@ class SummaryPlot:
         self.grid = gridspec.GridSpec(ncols=1, nrows=5, figure=self.fig,
                                       height_ratios=[2, 1.5, 1.5, 0.2, 1.5])
         self.fig.subplots_adjust(left=0.06, bottom=0.1, right=0.94, top=0.93, wspace=None, hspace=0.)
-
-
