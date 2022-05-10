@@ -20,11 +20,10 @@ def get_streamer_intervals(df, sideband=pd.Timedelta(2, "s")):
             if row.stable:
                 streamer_on = False
                 b = row.Index + sideband
-#                if len(streamer_intervals) != 0 and streamer_intervals[-1][1] > a:
-#                    streamer_intervals[-1][1] = b
-#                else:
-#                    streamer_intervals.append([a, b])
-                streamer_intervals.append([a, b])
+                if len(streamer_intervals) != 0 and streamer_intervals[-1][1] > a:
+                    streamer_intervals[-1][1] = b
+                else:
+                    streamer_intervals.append([a, b])
         else:
             if not row.stable:
                 streamer_on = True

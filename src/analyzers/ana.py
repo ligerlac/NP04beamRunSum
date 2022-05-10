@@ -14,6 +14,30 @@ from functools import cached_property
 import csv
 
 
+class StreamerAnalyzer(base_classes.GeneralAnalyzer):
+    def __init__(self, file_names=None):
+        self.file_names = file_names
+
+    def _get_data_frame_from_file(self, fn):
+        return pd.read_csv(fn, sep=',', usecols=[0, 1], names=['begin', 'end'], parse_dates=[0, 1])
+
+    def _get_modified_data_frame(self, df):
+        df['duration'] = df['end'] - df['begin']
+        df['duration_s'] = df['duration'].astype('int64')/10e8
+        return df
+
+    def plot_log_on(self, plot):
+        df = self.data_frame.sort_values(by='duration', ignore_index=True)
+        df = df['duration_s']
+        df.plot(kind='line', ax=plot, logy=True, title='logarithmic streamer durations')
+
+    def plot_hist_on(self, plot, cut_off=float('inf')):
+        df = self.data_frame['duration_s']
+        df = df.loc[df < cut_off]
+        df.hist(bins=10, ax=plot)
+
+
+
 class HeinzAnalyzer(base_classes.IntervalAnalyzer):
     def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None, val_name=None):
         super().__init__(interval=interval, file_names=file_names)
@@ -194,12 +218,14 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
                                                         time_axis=self.data_frame.index)
         return dt_calc.data_frame
 
-    def write_streamer_periods(self, file_name):
+    def write_streamer_periods(self, file_name, do_timestamps=False):
         with open(file_name, mode='w') as f:
             writer = csv.writer(f, delimiter=',')
             for interval in self.streamer_intervals:
-#                writer.writerow(interval)
-                writer.writerow([formatting.get_time_stamp_kevin(x) for x in interval])
+                if do_timestamps:
+                    writer.writerow([interval[0].timestamp(), interval[1].timestamp()])
+                else:
+                    writer.writerow(interval)
 
     def plot_efield_on(self, plot):
         return plot.plot(self.data_frame.index, self.data_frame['efield'], color='red',

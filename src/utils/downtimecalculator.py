@@ -35,7 +35,6 @@ class DownTimeCalculator:
 
     @cached_property
     def _down_time_list(self):
-        # this assumes that streamer intervals don't overlap
         down_time_list = [pd.Timedelta(0, "h")] * self._n_bins
         for i, ts in enumerate(self._time_stamps):
             n_ts = ts + self._refresh_period

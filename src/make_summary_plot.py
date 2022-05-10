@@ -16,7 +16,8 @@ def main(args):
     summary_plot = summaryplot.SummaryPlot.from_args(args)
     summary_plot.analyzer_group = analyzer_group
     summary_plot.plot()
-    analyzer_group.comb.write_streamer_periods('data/np04_hv_cut_periods.csv')
+    analyzer_group.comb.write_streamer_periods('data/np04_hv_cut_periods.csv', do_timestamps=False)
+    analyzer_group.comb.write_streamer_periods('data/np04_hv_cut_periods_timestamps.csv', do_timestamps=True)
 
 
 if __name__ == '__main__':

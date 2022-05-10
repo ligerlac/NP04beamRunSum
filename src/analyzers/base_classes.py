@@ -31,7 +31,8 @@ class GeneralAnalyzer:
     def data_frame(self):
         df = pd.concat([self._get_data_frame_from_file(fn) for fn in self.file_names], axis=0)
         df = self._get_modified_data_frame(df)
-        return self._get_shifted_data_frame(df)
+        return df
+        #return self._get_shifted_data_frame(df)
 
 
 class IntervalAnalyzer(GeneralAnalyzer):
