@@ -6,11 +6,11 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 
 import pandas as pd
 import numpy as np
-from analyzers import base
+from analyzers.base import single
 from functools import cached_property
 
 
-class StreamerAnalyzer(base.GeneralAnalyzer):
+class StreamerAnalyzer(single.GeneralAnalyzer):
     def __init__(self, file_names=None):
         self.file_names = file_names
 
@@ -38,7 +38,7 @@ class StreamerAnalyzer(base.GeneralAnalyzer):
         return copy
 
 
-class CurrAnalyzer(base.HeinzAnalyzer):
+class CurrAnalyzer(single.HeinzAnalyzer):
     def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None):
         super().__init__(interval=interval, file_names=file_names)
         self.val_name = 'curr'
@@ -52,7 +52,7 @@ class CurrAnalyzer(base.HeinzAnalyzer):
                               markersize=0.5)
 
 
-class VoltAnalyzer(base.HeinzAnalyzer):
+class VoltAnalyzer(single.HeinzAnalyzer):
     def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None):
         super().__init__(interval=interval, file_names=file_names)
         self.val_name = 'volt'
@@ -66,7 +66,7 @@ class VoltAnalyzer(base.HeinzAnalyzer):
                               markersize=0.5)
 
 
-class DetectorStatusAnalyzer(base.GeneralAnalyzer):
+class DetectorStatusAnalyzer(single.GeneralAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=',', usecols=[0, 1], names=['begin', 'end'], header=None, parse_dates=[0,1])
 
@@ -81,7 +81,7 @@ class DetectorStatusAnalyzer(base.GeneralAnalyzer):
         return pd.IntervalIndex.from_tuples(bin_tuples)
 
 
-class TriggerAnalyzer(base.TimeStampedAnalyzer):
+class TriggerAnalyzer(single.TimeStampedAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 2],
                            names=['timestamp', 'trig_count'], header=0)
@@ -91,7 +91,7 @@ class TriggerAnalyzer(base.TimeStampedAnalyzer):
         return df
 
 
-class DAQAnalyzer(base.TimeStampedAnalyzer):
+class DAQAnalyzer(single.TimeStampedAnalyzer):
     def __init__(self, file_names=None, excl_cats=None,
                  upper_ts=pd.to_datetime("2018-11-12 10:00:00", utc=True)):
         super().__init__(file_names=file_names)
@@ -110,7 +110,7 @@ class DAQAnalyzer(base.TimeStampedAnalyzer):
         return df
 
 
-class NewDAQAnalyzer(base.GeneralAnalyzer):
+class NewDAQAnalyzer(single.GeneralAnalyzer):
     def __init__(self, file_names=None, excl_cats=None,
                  upper_ts=pd.to_datetime("2018-11-12 10:00:00", utc=True)):
         super().__init__(file_names=file_names)
@@ -130,7 +130,7 @@ class NewDAQAnalyzer(base.GeneralAnalyzer):
         return df
 
 
-class LifeTimeAnalyzer(base.TimeStampedAnalyzer):
+class LifeTimeAnalyzer(single.TimeStampedAnalyzer):
     @staticmethod
     def _get_data_frame_from_file(fn):
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 1],
@@ -141,7 +141,7 @@ class LifeTimeAnalyzer(base.TimeStampedAnalyzer):
         return df
 
 
-class BeamAnalyzer(base.TimeStampedAnalyzer):
+class BeamAnalyzer(single.TimeStampedAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 1],
                            names=['timestamp', 'beam_mom'], header=0)
@@ -167,7 +167,7 @@ class BeamAnalyzer(base.TimeStampedAnalyzer):
         return df
 
 
-class EFieldAnalyzer(base.TimeStampedAnalyzer):
+class EFieldAnalyzer(single.TimeStampedAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1],
                            names=['timestamp', 'efield'], header=0)

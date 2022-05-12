@@ -5,14 +5,14 @@ __maintainer__ = "Lino Gerlach"
 __email__ = "lino.oscar.gerlach@cern.ch"
 
 import pandas as pd
-from analyzers import base
+from analyzers.base import combined
 from utils import streamersearcher
 from utils import downtimecalculator
 from functools import cached_property
 import csv
 
 
-class CombinedHeinzAnalyzer(base.ResampledAnalyzer):
+class CombinedHeinzAnalyzer(combined.ResampledAnalyzer):
     def _get_modified_data_frame(self, df):
         df = self._decorate_averages(df)
         df = self._decorate_stable(df)
@@ -55,32 +55,15 @@ class CombinedHeinzAnalyzer(base.ResampledAnalyzer):
                     writer.writerow(interval)
 
 
-class CombinedDurationAnalyzer(base.CombinedAnalyzer):
-    """Handles instances of StreamerAnalyzer"""
-    def __init__(self, analyzer_dict=None, binning=None):
-        self.analyzer_dict = analyzer_dict
-        self.binning = binning
-
-    def _get_data_frames(self):
-        data_frames = []
-        for key, value in self.analyzer_dict.items():
-            data_frames.append(self._get_data_frame(df=value.data_frame, title=key))
-        return data_frames
-
+class SimpleDurationAnalyzer(combined.DurationAnalyzer):
     def _get_data_frame(self, df, title='title'):
         df[title] = pd.cut(df['duration_s'], self.binning)
         df_plot = df[title].value_counts(sort=False)
         return df_plot / df_plot.sum()
 
 
-class CombinedCumDurationAnalyzer(CombinedDurationAnalyzer):
-    def _get_modified_data_frame(self, df):
-        print(f'CombinedCumDurationAnalyzer._get_modified_date_frame')
-        print(f'df=\n{df}')
-        return df_plot
-
-
-    def _get_data_frame_old(self, df, title='title'):
+class CumDurationAnalyzer(combined.DurationAnalyzer):
+    def _get_data_frame(self, df, title='title'):
         df['temp'] = pd.cut(df['duration_s'], self.binning)
         df_plot = df[title].value_counts(sort=False)
         for row in df.itertuples(index=True, name='Pandas'):
