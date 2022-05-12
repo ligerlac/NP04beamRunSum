@@ -14,7 +14,7 @@ class DurationPlot:
     def __init__(self):
         self.fig = None
         self.grid = None
-        self.analyzer = None
+        self.analyzer_group = None
         self.output_name = None
         self.create_skeloton()
 
@@ -69,37 +69,46 @@ class DurationPlot:
         self.cum_hist_plot.tick_params(axis='x', labelrotation=45)
 
     def plot_duration(self):
-        df = self.analyzer.data_frame.sort_values(by='duration', ignore_index=True)
-        self._plot_duration(df)
-        df = self.analyzer.data_frame_on
+        self._plot_duration(self.analyzer_group.streamer.data_frame, color='blue')
+        self._plot_duration(self.analyzer_group.streamer_active.data_frame, color='red')
 
-    def _plot_duration(self, df):
+    def _plot_duration(self, df, color='blue'):
+        df = df.sort_values(by='duration', ignore_index=True)
+        print(f'df.iloc[-1] =\n{df.iloc[-1]}')
         df = df['duration_s']
-        df.plot(kind='line', ax=self.duration_plot, logy=True, title='logarithmic streamer durations')
+        df.plot(kind='line', ax=self.duration_plot, logy=True, title='logarithmic streamer durations', color=color)
 
     def plot_simple_hist(self, cut_off=float('inf')):
-        df = self.analyzer.data_frame['duration_s']
+        self._plot_simple_hist(self.analyzer_group.streamer.data_frame, color='blue', cut_off=cut_off)
+        self._plot_simple_hist(self.analyzer_group.streamer_active.data_frame, color='red', cut_off=cut_off)
+
+    def _plot_simple_hist(self, df, color='blue', cut_off=float('inf')):
+        df = df['duration_s']
         df = df.loc[df < cut_off]
-        df.hist(bins=10, ax=self.simple_hist_plot)
+        df.hist(bins=10, ax=self.simple_hist_plot, color=color)
 
     def plot_hist(self, binning=None):
         if binning is None:
             binning = [0, 5, 10, 100]
-        df = self.analyzer.data_frame
+        self._plot_hist(self.analyzer_group.streamer.data_frame, binning, color='blue')
+        self._plot_hist(self.analyzer_group.streamer_active.data_frame, binning, color='red')
+
+    def _plot_hist(self, df, binning, color='blue'):
         df["bins"] = pd.cut(df['duration_s'], binning)
-        df["bins"].value_counts(sort=False).plot.bar(ax=self.custom_hist_plot)
+        df["bins"].value_counts(sort=False).plot.bar(ax=self.custom_hist_plot, color=color)
 
     def plot_cum_duration(self, binning=None):
         if binning is None:
             binning = [0, 5, 10, 100, float('inf')]
-        df = self.analyzer.data_frame
-        df["bins"] = pd.cut(df['duration_s'], binning)
-        df = df["bins"].value_counts(sort=False)
-        for row in self.analyzer.data_frame.itertuples(index=True, name='Pandas'):
-            df.loc[row.bins] += row.duration_s
-        print(f'df =\n{df}')
-        df.plot.bar(ax=self.cum_hist_plot)
+        self._plot_cum_duration(self.analyzer_group.streamer.data_frame, binning, color='blue')
+        self._plot_cum_duration(self.analyzer_group.streamer_active.data_frame, binning, color='red')
 
+    def _plot_cum_duration(self, df, binning, color='blue'):
+        df["bins"] = pd.cut(df['duration_s'], binning)
+        df_plot = df["bins"].value_counts(sort=False)
+        for row in df.itertuples(index=True, name='Pandas'):
+            df_plot.loc[row.bins] += row.duration_s
+        df_plot.plot.bar(ax=self.cum_hist_plot, color=color)
 
 
     def plot(self):

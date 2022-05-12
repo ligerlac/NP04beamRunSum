@@ -27,10 +27,24 @@ class GeneralAnalyzer:
         data_frame['timestamp'] = pd.to_datetime(data_frame.index)#.shift(1, freq='H')
         return data_frame.set_index('timestamp')
 
+    def _decorate_cols_in_sec(self, df, col_names):
+        for col_name in col_names:
+            df[f'{col_name}_s'] = df[col_name].astype('int64') / 10e8
+        return df
+
     @cached_property
     def data_frame(self):
         df = pd.concat([self._get_data_frame_from_file(fn) for fn in self.file_names], axis=0)
         return self._get_modified_data_frame(df)
+
+    def get_copy(self):
+        return self.from_data_frame(self.data_frame)
+
+    @classmethod
+    def from_data_frame(cls, df):
+        new_instance = cls()
+        new_instance.data_frame = df
+        return new_instance
 
 
 class TimeStampedAnalyzer(GeneralAnalyzer):

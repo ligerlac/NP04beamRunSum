@@ -77,6 +77,11 @@ class SummaryPlot:
         self.life_time_plot.yaxis.set_major_formatter(FuncFormatter(formatting.format_fn))
         self.life_time_plot.yaxis.set_minor_formatter(FuncFormatter(formatting.minorFormat_fn))
 
+    def plot_streamers(self):
+        self.hv_stat_plot.axvspan(self.analyzer_group.comb.data_frame.index[0],
+                                  self.analyzer_group.comb.data_frame.index[-1], facecolor='green')
+        for cut in self.analyzer_group.comb.streamer_intervals:
+            self.hv_stat_plot.axvspan(cut[0], cut[1], facecolor='red')
 
     def fill_sub_plots(self):
         self.plot_e_field()
@@ -113,7 +118,7 @@ class SummaryPlot:
         self.apply_cosmetics()
         self.set_locators()
         self.color_plots()
-        self.analyzer_group.comb.plot_streamers_on(self.hv_stat_plot)
+        self.plot_streamers()
         print('run time [s]')
         print(datetime.now() - startTime)
         plt.savefig(self.output_name, format='png', dpi=1200)

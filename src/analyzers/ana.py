@@ -22,8 +22,20 @@ class StreamerAnalyzer(base_classes.GeneralAnalyzer):
 
     def _get_modified_data_frame(self, df):
         df['duration'] = df['end'] - df['begin']
-        df['duration_s'] = df['duration'].astype('int64')/10e8
+        df = self._decorate_cols_in_sec(df, ['duration', 'begin', 'end'])
         return df
+
+    def project_on_active_periods(self, detector_status_analyzer):
+        binning = detector_status_analyzer.get_active_cut_binning()
+        df = self.data_frame
+        df['bin_begin'] = pd.cut(df['begin_s'], binning)  # is NaN if not in active period
+        df['bin_end'] = pd.cut(df['end_s'], binning)  # is NaN if not in active period
+        self.data_frame = df.loc[~df['bin_begin'].isnull() * ~df['bin_end'].isnull()].reset_index()
+
+    def get_active_copy(self, detector_status_analyzer):
+        active_copy = self.get_copy()
+        active_copy.project_on_active_periods(detector_status_analyzer)
+        return active_copy
 
 
 class HeinzAnalyzer(base_classes.IntervalAnalyzer):
@@ -47,11 +59,11 @@ class CurrAnalyzer(HeinzAnalyzer):
 
     def plot_on(self, plot):
         return plot.plot_date(self.data_frame.index, self.data_frame[self.val_name], color='red',
-                  markersize=0.15, linestyle='solid')
+                              markersize=0.15, linestyle='solid')
 
     def plot_std_on(self, plot):
         return plot.plot_date(self.interval_handler.mean_time_stamps, self.val_std_array, color='darkviolet',
-                  markersize=0.5)
+                              markersize=0.5)
 
 
 class VoltAnalyzer(HeinzAnalyzer):
@@ -61,11 +73,26 @@ class VoltAnalyzer(HeinzAnalyzer):
 
     def plot_on(self, plot):
         return plot.plot_date(self.data_frame.index, self.data_frame[self.val_name], color='blue',
-                  markersize=0.15, linestyle='solid')
+                              markersize=0.15, linestyle='solid')
 
     def plot_std_on(self, plot):
         return plot.plot_date(self.interval_handler.mean_time_stamps, self.val_std_array, color='green',
-                  markersize=0.5)
+                              markersize=0.5)
+
+
+class DetectorStatusAnalyzer(base_classes.GeneralAnalyzer):
+    def _get_data_frame_from_file(self, fn):
+        return pd.read_csv(fn, sep=',', usecols=[0, 1], names=['begin', 'end'], header=None, parse_dates=[0,1])
+
+    def _get_modified_data_frame(self, df):
+        df = self._decorate_cols_in_sec(df, ['begin', 'end'])
+        return df
+
+    def get_active_cut_binning(self):
+        bin_tuples = []
+        for row in self.data_frame.itertuples(index=True, name='Pandas'):
+            bin_tuples.append((row.begin_s, row.end_s))
+        return pd.IntervalIndex.from_tuples(bin_tuples)
 
 
 class TriggerAnalyzer(base_classes.TimeStampedAnalyzer):
@@ -94,6 +121,26 @@ class DAQAnalyzer(base_classes.TimeStampedAnalyzer):
         df = df.loc[df.index < self.upper_ts]
         df = df.iloc[::-1]
         df['trig_count_sum'] = np.cumsum(df['trig_count'])
+        return df
+
+
+class NewDAQAnalyzer(base_classes.GeneralAnalyzer):
+    def __init__(self, file_names=None, excl_cats=None,
+                 upper_ts=pd.to_datetime("2018-11-12 10:00:00", utc=True)):
+        super().__init__(file_names=file_names)
+        self.excl_cats = excl_cats
+        self.upper_ts = upper_ts
+
+    def _get_data_frame_from_file(self, fn):
+        #5844, physics, "Mon, 12 Nov 2018 06:04:10 GMT", "Mon, 12 Nov 2018 08:02:19 GMT", 11584
+        return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 1, 2, 3, 4],
+                           names=['runnumber', 'cat', 'begin', 'end', 'trig_count'], parse_dates=[2, 3])
+
+    def _get_modified_data_frame(self, df):
+        #df = df[~df['cat'].isin(self.excl_cats)]
+        #df = df.loc[df.index < self.upper_ts]
+        #df = df.iloc[::-1]
+        #df['trig_count_sum'] = np.cumsum(df['trig_count'])
         return df
 
 
@@ -181,8 +228,3 @@ class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
                     writer.writerow([interval[0].timestamp(), interval[1].timestamp()])
                 else:
                     writer.writerow(interval)
-
-    def plot_streamers_on(self, plot):
-        plot.axvspan(self.data_frame.index[0], self.data_frame.index[-1], facecolor='green')
-        for cut in self.streamer_intervals:
-            plot.axvspan(cut[0], cut[1], facecolor='red')
