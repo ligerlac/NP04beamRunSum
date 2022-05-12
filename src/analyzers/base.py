@@ -92,8 +92,28 @@ class HeinzAnalyzer(IntervalAnalyzer):
 
 
 class CombinedAnalyzer:
+    """Wrapper class for data frames that are horizontally joined"""
     def __init__(self, analyzer_list=None):
         self.analyzer_list = analyzer_list
+
+    @abc.abstractmethod
+    def _get_data_frames(self):
+        return []
+
+    @abc.abstractmethod
+    def _get_modified_data_frame(self, df):
+        return df
+
+    @cached_property
+    def data_frame(self):
+        df = pd.concat(self._get_data_frames(), axis=1)
+        df = self._get_modified_data_frame(df)
+        return df
+
+
+class ResampledAnalyzer(CombinedAnalyzer):
+    def __init__(self, analyzer_list):
+        super().__init__(analyzer_list)
         self.resample_rate = 'S'
 
     def _get_data_frames(self):
@@ -103,10 +123,6 @@ class CombinedAnalyzer:
             dfs.append(self._resample_count(ana))
         return dfs
 
-    @abc.abstractmethod
-    def _get_modified_data_frame(self, df):
-        return df
-
     def _resample_value(self, ana):
         res = ana.data_frame.resample(self.resample_rate)[ana.val_name].sum()
         return pd.Series.to_frame(res).rename(columns={ana.val_name: 'sum'+ana.val_name})
@@ -114,9 +130,3 @@ class CombinedAnalyzer:
     def _resample_count(self, ana):
         res = ana.data_frame.resample(self.resample_rate)[ana.val_name].count()
         return pd.Series.to_frame(res).rename(columns={ana.val_name: 'n'+ana.val_name})
-
-    @cached_property
-    def data_frame(self):
-        df = pd.concat(self._get_data_frames(), axis=1)
-        df = self._get_modified_data_frame(df)
-        return df

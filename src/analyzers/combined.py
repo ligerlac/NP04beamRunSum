@@ -12,7 +12,7 @@ from functools import cached_property
 import csv
 
 
-class CombinedHeinzAnalyzer(base.CombinedAnalyzer):
+class CombinedHeinzAnalyzer(base.ResampledAnalyzer):
     def _get_modified_data_frame(self, df):
         df = self._decorate_averages(df)
         df = self._decorate_stable(df)
@@ -74,7 +74,13 @@ class CombinedDurationAnalyzer(base.CombinedAnalyzer):
 
 
 class CombinedCumDurationAnalyzer(CombinedDurationAnalyzer):
-    def _get_data_frame(self, df, title='title'):
+    def _get_modified_data_frame(self, df):
+        print(f'CombinedCumDurationAnalyzer._get_modified_date_frame')
+        print(f'df=\n{df}')
+        return df_plot
+
+
+    def _get_data_frame_old(self, df, title='title'):
         df['temp'] = pd.cut(df['duration_s'], self.binning)
         df_plot = df[title].value_counts(sort=False)
         for row in df.itertuples(index=True, name='Pandas'):
