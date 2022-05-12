@@ -7,12 +7,12 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 import argparse
 import logging
 from plotting import durationplot
-from analyzers import anagroup
+from analyzers import group
 
 
 def main(args):
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.WARNING)
-    ana_group = anagroup.StreamerGroup.from_args(args)
+    ana_group = group.StreamerGroup.from_args(args)
     duration_plot = durationplot.DurationPlot.from_args(args)
     duration_plot.analyzer_group = ana_group
     duration_plot.plot()

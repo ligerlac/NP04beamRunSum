@@ -60,8 +60,8 @@ class SummaryPlot:
 
 
     def plot_lifetime(self):
-        self.life_time_plot.plot(self.analyzer_group.data_frame.index,
-                            self.analyzer_group.data_frame['lifetime'],
+        self.life_time_plot.plot(self.analyzer_group.life_time.data_frame.index,
+                            self.analyzer_group.life_time.data_frame['lifetime'],
                             linestyle='None', color='darkviolet', marker='o', markersize=3)
         self.life_time_plot.set_yticks([0, 1, 2, 3, 4, 5, 6])
 

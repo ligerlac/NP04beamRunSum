@@ -7,10 +7,7 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 import pandas as pd
 import numpy as np
 from analyzers import base
-from utils import streamersearcher
-from utils import downtimecalculator
 from functools import cached_property
-import csv
 
 
 class StreamerAnalyzer(base.GeneralAnalyzer):

@@ -7,12 +7,12 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 import argparse
 import logging
 from plotting import summaryplot
-from analyzers import anagroup
+from analyzers import group
 
 
 def main(args):
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.WARNING)
-    analyzer_group = anagroup.AnalyzerGroup.from_args(args)
+    analyzer_group = group.AnalyzerGroup.from_args(args)
     summary_plot = summaryplot.SummaryPlot.from_args(args)
     summary_plot.analyzer_group = analyzer_group
     summary_plot.plot()

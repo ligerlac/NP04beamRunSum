@@ -7,12 +7,12 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 import argparse
 import logging
 from plotting import heinzplot
-from analyzers import anagroup
+from analyzers import group
 
 
 def main(args):
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.WARNING)
-    analyzer_group = anagroup.HeinzGroup.from_args(args)
+    analyzer_group = group.HeinzGroup.from_args(args)
     heinz_plot = heinzplot.HeinzPlot.from_args(args)
     heinz_plot.analyzer_group = analyzer_group
     heinz_plot.plot()
