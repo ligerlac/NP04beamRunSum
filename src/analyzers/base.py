@@ -12,6 +12,7 @@ from utils import intervalhandler
 
 
 class GeneralAnalyzer:
+    """Wrapper class for pandas data frame"""
     def __init__(self, file_names=None):
         self.file_names = file_names
 
@@ -74,6 +75,20 @@ class IntervalAnalyzer(TimeStampedAnalyzer):
     def interval_handler(self):
         return intervalhandler.IntervalHandler(self.interval, self.data_frame.index[0],
                                                self.data_frame.index[-1])
+
+
+class HeinzAnalyzer(IntervalAnalyzer):
+    def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None, val_name=None):
+        super().__init__(interval=interval, file_names=file_names)
+        self.val_name = val_name
+
+    def _get_data_frame_from_file(self, fn):
+        return pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1],
+                           names=['timestamp', self.val_name])
+
+    def _get_modified_data_frame(self, df):
+        df.index = 1000000 * df.index
+        return df
 
 
 class CombinedAnalyzer:

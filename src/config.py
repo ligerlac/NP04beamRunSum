@@ -18,22 +18,22 @@ all_date_list = ['2018-09-14', '2018-09-15', '2018-09-16', '2018-09-17', '2018-0
 
 
 class InputFileNames:
-    beam_mom = ['data/beamMom.csv']
-    trig = ['data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv']
-    daq = ['data/DAQ-runlist.csv']
-    life_time = ['data/prm_Top_lifetime_data.csv']
-    detector_status = ['data/detector_status.csv']
+    beam_mom = ['data/input/beamMom.csv']
+    trig = ['data/input/TIMBER_DATA_alltriggers-DAQaddedNov1.csv']
+    daq = ['data/input/DAQ-runlist.csv']
+    life_time = ['data/input/prm_Top_lifetime_data.csv']
+    detector_status = ['data/input/detector_status.csv']
 
     def __init__(self, date_list=None):
         if date_list is None:
             self.date_list = all_date_list
         else:
             self.date_list = date_list
-        self.beam_mom = ['data/beamMom.csv']
-        self.trig = ['data/TIMBER_DATA_alltriggers-DAQaddedNov1.csv']
-        self.daq = ['data/DAQ-runlist.csv']
-        self.life_time = ['data/prm_Top_lifetime_data.csv']
-        self.detector_status = ['data/detector_status.csv']
-        self.streamer = ['data/np04_hv_cut_periods.csv']
-        self.curr = ['data/heinzCurr_' + d + '.csv' for d in self.date_list]
-        self.volt = ['data/heinzVolt_' + d + '.csv' for d in self.date_list]
+        self.beam_mom = ['data/input/beamMom.csv']
+        self.trig = ['data/input/TIMBER_DATA_alltriggers-DAQaddedNov1.csv']
+        self.daq = ['data/input/DAQ-runlist.csv']
+        self.life_time = ['data/input/prm_Top_lifetime_data.csv']
+        self.detector_status = ['data/input/detector_status.csv']
+        self.streamer = ['data/input/np04_hv_cut_periods.csv']
+        self.curr = ['data/input/heinzCurr_' + d + '.csv' for d in self.date_list]
+        self.volt = ['data/input/heinzVolt_' + d + '.csv' for d in self.date_list]

@@ -6,14 +6,14 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 
 import pandas as pd
 import numpy as np
-from analyzers import base_classes
+from analyzers import base
 from utils import streamersearcher
 from utils import downtimecalculator
 from functools import cached_property
 import csv
 
 
-class StreamerAnalyzer(base_classes.GeneralAnalyzer):
+class StreamerAnalyzer(base.GeneralAnalyzer):
     def __init__(self, file_names=None):
         self.file_names = file_names
 
@@ -25,34 +25,23 @@ class StreamerAnalyzer(base_classes.GeneralAnalyzer):
         df = self._decorate_cols_in_sec(df, ['duration', 'begin', 'end'])
         return df
 
-    def project_on_active_periods(self, detector_status_analyzer):
-        binning = detector_status_analyzer.get_active_cut_binning()
+    def _project_on_status_analyzer(self, status_analyzer):
+        binning = status_analyzer.get_active_cut_binning()
+        self._project_on_binning(binning)
+
+    def _project_on_binning(self, binning):
         df = self.data_frame
         df['bin_begin'] = pd.cut(df['begin_s'], binning)  # is NaN if not in active period
         df['bin_end'] = pd.cut(df['end_s'], binning)  # is NaN if not in active period
         self.data_frame = df.loc[~df['bin_begin'].isnull() * ~df['bin_end'].isnull()].reset_index()
 
-    def get_active_copy(self, detector_status_analyzer):
-        active_copy = self.get_copy()
-        active_copy.project_on_active_periods(detector_status_analyzer)
-        return active_copy
+    def get_projected_copy(self, status_analyzer):
+        copy = self.get_copy()
+        copy._project_on_status_analyzer(status_analyzer)
+        return copy
 
 
-class HeinzAnalyzer(base_classes.IntervalAnalyzer):
-    def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None, val_name=None):
-        super().__init__(interval=interval, file_names=file_names)
-        self.val_name = val_name
-
-    def _get_data_frame_from_file(self, fn):
-        return pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1],
-                           names=['timestamp', self.val_name])
-
-    def _get_modified_data_frame(self, df):
-        df.index = 1000000 * df.index
-        return df
-
-
-class CurrAnalyzer(HeinzAnalyzer):
+class CurrAnalyzer(base.HeinzAnalyzer):
     def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None):
         super().__init__(interval=interval, file_names=file_names)
         self.val_name = 'curr'
@@ -66,7 +55,7 @@ class CurrAnalyzer(HeinzAnalyzer):
                               markersize=0.5)
 
 
-class VoltAnalyzer(HeinzAnalyzer):
+class VoltAnalyzer(base.HeinzAnalyzer):
     def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None):
         super().__init__(interval=interval, file_names=file_names)
         self.val_name = 'volt'
@@ -80,7 +69,7 @@ class VoltAnalyzer(HeinzAnalyzer):
                               markersize=0.5)
 
 
-class DetectorStatusAnalyzer(base_classes.GeneralAnalyzer):
+class DetectorStatusAnalyzer(base.GeneralAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=',', usecols=[0, 1], names=['begin', 'end'], header=None, parse_dates=[0,1])
 
@@ -95,7 +84,7 @@ class DetectorStatusAnalyzer(base_classes.GeneralAnalyzer):
         return pd.IntervalIndex.from_tuples(bin_tuples)
 
 
-class TriggerAnalyzer(base_classes.TimeStampedAnalyzer):
+class TriggerAnalyzer(base.TimeStampedAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 2],
                            names=['timestamp', 'trig_count'], header=0)
@@ -105,7 +94,7 @@ class TriggerAnalyzer(base_classes.TimeStampedAnalyzer):
         return df
 
 
-class DAQAnalyzer(base_classes.TimeStampedAnalyzer):
+class DAQAnalyzer(base.TimeStampedAnalyzer):
     def __init__(self, file_names=None, excl_cats=None,
                  upper_ts=pd.to_datetime("2018-11-12 10:00:00", utc=True)):
         super().__init__(file_names=file_names)
@@ -124,7 +113,7 @@ class DAQAnalyzer(base_classes.TimeStampedAnalyzer):
         return df
 
 
-class NewDAQAnalyzer(base_classes.GeneralAnalyzer):
+class NewDAQAnalyzer(base.GeneralAnalyzer):
     def __init__(self, file_names=None, excl_cats=None,
                  upper_ts=pd.to_datetime("2018-11-12 10:00:00", utc=True)):
         super().__init__(file_names=file_names)
@@ -144,7 +133,7 @@ class NewDAQAnalyzer(base_classes.GeneralAnalyzer):
         return df
 
 
-class LifeTimeAnalyzer(base_classes.TimeStampedAnalyzer):
+class LifeTimeAnalyzer(base.TimeStampedAnalyzer):
     @staticmethod
     def _get_data_frame_from_file(fn):
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 1],
@@ -155,7 +144,7 @@ class LifeTimeAnalyzer(base_classes.TimeStampedAnalyzer):
         return df
 
 
-class BeamAnalyzer(base_classes.TimeStampedAnalyzer):
+class BeamAnalyzer(base.TimeStampedAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 1],
                            names=['timestamp', 'beam_mom'], header=0)
@@ -181,50 +170,8 @@ class BeamAnalyzer(base_classes.TimeStampedAnalyzer):
         return df
 
 
-class EFieldAnalyzer(base_classes.TimeStampedAnalyzer):
+class EFieldAnalyzer(base.TimeStampedAnalyzer):
     def _get_data_frame_from_file(self, fn):
         return pd.read_csv(fn, sep=' ', index_col=0, usecols=[0, 1],
                            names=['timestamp', 'efield'], header=0)
 
-
-class CombinedHeinzAnalyzer(base_classes.CombinedAnalyzer):
-    def _get_modified_data_frame(self, df):
-        df = self._decorate_averages(df)
-        df = self._decorate_stable(df)
-        return df
-
-    def _decorate_averages(self, df):
-        df['avgcurr'] = df['sumcurr'] / df['ncurr']
-        df['avgvolt'] = df['sumvolt'] / df['nvolt']
-        df['resistance'] = df['avgvolt'] / df['avgcurr']
-        df['efield'] = (df['avgvolt'] - 97 * df['avgcurr']) / 360
-        return df
-
-    def _decorate_stable(self, df):
-        start_ts, end_ts = [pd.to_datetime("2018-10-05 00:00:00"), pd.to_datetime("2018-10-17 12:00:00")]
-        b_df = df.loc[df.index <= start_ts]
-        d_df = df.loc[(df.index > start_ts) * (df.index < end_ts)]
-        a_df = df.loc[(df.index >= end_ts)]
-        b_df['stable'] = (b_df['resistance'] > 1452) * (b_df['resistance'] < 1472) * (b_df['avgvolt'] > 120000)
-        d_df['stable'] = (d_df['resistance'] > 1465) * (d_df['avgvolt'] > 120000)
-        a_df['stable'] = (a_df['resistance'] > 1465) * (a_df['avgvolt'] > 180000)
-        return pd.concat([b_df, d_df, a_df], axis=0)
-
-    @cached_property
-    def streamer_intervals(self):
-        return streamersearcher.get_streamer_intervals(self.data_frame)
-
-    @cached_property
-    def avg_up_time_data_frame(self):
-        dt_calc = downtimecalculator.DownTimeCalculator(down_intervals=self.streamer_intervals,
-                                                        time_axis=self.data_frame.index)
-        return dt_calc.data_frame
-
-    def write_streamer_periods(self, file_name, do_timestamps=False):
-        with open(file_name, mode='w') as f:
-            writer = csv.writer(f, delimiter=',')
-            for interval in self.streamer_intervals:
-                if do_timestamps:
-                    writer.writerow([interval[0].timestamp(), interval[1].timestamp()])
-                else:
-                    writer.writerow(interval)
