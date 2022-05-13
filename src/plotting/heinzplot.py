@@ -84,8 +84,17 @@ class HeinzPlot:
         a.tick_params(labelbottom=False)
         return a
 
+    def color_plots(self):
+        plot_list = [self.curr_plot, self.volt_plot]
+        for plot in plot_list:
+            plot.axvspan(self.analyzer_group.beam_mom.data_frame.index[0],
+                         self.analyzer_group.beam_mom.data_frame.index[-1],
+                         facecolor='salmon', alpha=0.2)
+            for period in self.analyzer_group.beam_mom.active_periods:
+                plot.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
+
+
     def plot(self):
-        self.analyzer_group.beam_mom.color_plots([self.curr_plot, self.volt_plot])
         self.analyzer_group.curr.plot_on(self.curr_plot)
         self.analyzer_group.volt.plot_on(self.volt_plot)
         self.analyzer_group.curr.plot_std_on(self.curr_std_plot)
@@ -94,6 +103,7 @@ class HeinzPlot:
         self.curr_plot.set_xlim(c_ts[0], c_ts[-1])
         days = mdates.DayLocator()
         self.curr_plot.xaxis.set_major_locator(days)
+        self.color_plots()
         plt.savefig(self.output_name, format='png', dpi=1200)
         plt.show()
 

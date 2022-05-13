@@ -6,8 +6,9 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 
 import argparse
 import logging
-from plotting import durationplot
-from analyzers import group
+from src.plotting import durationplot
+import src.analyzers.group as group
+#from src.analyzers import group
 
 
 def main(args):
@@ -25,4 +26,5 @@ if __name__ == '__main__':
     parser.add_argument("--debug", default=False, action="store_true", help="activate debug level logging")
     parser.add_argument("--output", type=str, default="data/output/duration_plots.png", help="name of output file")
     args = parser.parse_args()
+    print(f'args={args}')
     main(args)

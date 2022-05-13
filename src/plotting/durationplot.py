@@ -24,8 +24,11 @@ class DurationPlot:
         return heinz_plot
 
     def create_skeloton(self):
-        self.fig = plt.figure(figsize=(6, 5))
-        self.grid = gridspec.GridSpec(nrows=4, ncols=2, figure=self.fig, height_ratios=[0.4, 0.1, 0.4, 0.1])
+        self.fig = plt.figure(figsize=(10, 5))
+        #self.fig = plt.figure(figsize=(6, 5))
+#        self.grid = gridspec.GridSpec(nrows=4, ncols=2, figure=self.fig, height_ratios=[0.4, 0.1, 0.4, 0.1])
+#        self.fig.subplots_adjust(left=0.06, bottom=0.1, right=0.94, top=0.93, wspace=None, hspace=0.)
+        self.grid = gridspec.GridSpec(nrows=2, ncols=2, figure=self.fig, height_ratios=[0.4, 0.1])
         self.fig.subplots_adjust(left=0.06, bottom=0.1, right=0.94, top=0.93, wspace=None, hspace=0.)
 
     @cached_property
@@ -39,21 +42,23 @@ class DurationPlot:
     @cached_property
     def simple_hist_plot(self):
         a = self.fig.add_subplot(self.grid[0, 1])
-        a.set_ylabel('Number of entries')
+        a.set_ylabel('Number of entries [a.u.]')
         a.set_xlabel('Streamer duration [s]')
         return a
 
     @cached_property
     def custom_hist_plot(self):
-        a = self.fig.add_subplot(self.grid[2, 0])
-        a.set_ylabel('Number of entries')
+#        a = self.fig.add_subplot(self.grid[2, 0])
+        a = self.fig.add_subplot(self.grid[0, 0])
+        a.set_ylabel('Number of entries [a.u.]')
         a.set_xlabel('Streamer duration [s]')
         return a
 
     @cached_property
     def cum_hist_plot(self):
-        a = self.fig.add_subplot(self.grid[2, 1])
-        a.set_ylabel('Cumulative time')
+#        a = self.fig.add_subplot(self.grid[2, 1])
+        a = self.fig.add_subplot(self.grid[0, 1])
+        a.set_ylabel('Cumulative time [a.u.]')
         a.set_xlabel('Streamer duration [s]')
         return a
 
@@ -101,8 +106,8 @@ class DurationPlot:
         df_plot.plot.bar(ax=self.cum_hist_plot, rot=0, logy=True)
 
     def plot(self):
-        self.plot_duration()
-        self.plot_simple_hist(cut_off=16)
+#        self.plot_duration()
+#        self.plot_simple_hist(cut_off=16)
         self.plot_hist(binning=[0, 10, 60, 3600, 24*3600, float('inf')])
         self.plot_cum_duration(binning=[0, 10, 60, 3600, 24*3600, float('inf')])
         self.apply_cosmetics()

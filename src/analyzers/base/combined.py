@@ -54,7 +54,10 @@ class DurationAnalyzer(CombinedAnalyzer):
     """Handles instances of StreamerAnalyzer"""
     def __init__(self, analyzer_dict=None, binning=None):
         self.analyzer_dict = analyzer_dict
-        self.binning = binning
+        if binning is None:
+            self.binning = [0, float('inf')]
+        else:
+            self.binning = binning
 
     def _get_data_frames(self):
         data_frames = []

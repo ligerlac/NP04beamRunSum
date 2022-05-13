@@ -26,14 +26,14 @@ class InputFileNames:
 
     def __init__(self, date_list=None):
         if date_list is None:
-            self.date_list = all_date_list
+            self._date_list = all_date_list
         else:
-            self.date_list = date_list
+            self._date_list = date_list
         self.beam_mom = ['data/input/beamMom.csv']
         self.trig = ['data/input/TIMBER_DATA_alltriggers-DAQaddedNov1.csv']
         self.daq = ['data/input/DAQ-runlist.csv']
         self.life_time = ['data/input/prm_Top_lifetime_data.csv']
         self.detector_status = ['data/input/detector_status.csv']
         self.streamer = ['data/input/np04_hv_cut_periods.csv']
-        self.curr = ['data/input/heinzCurr_' + d + '.csv' for d in self.date_list]
-        self.volt = ['data/input/heinzVolt_' + d + '.csv' for d in self.date_list]
+        self.curr = ['data/input/heinzCurr_' + d + '.csv' for d in self._date_list]
+        self.volt = ['data/input/heinzVolt_' + d + '.csv' for d in self._date_list]

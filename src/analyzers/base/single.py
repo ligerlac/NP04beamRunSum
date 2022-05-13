@@ -8,7 +8,7 @@ import pandas as pd
 from functools import cached_property
 import numpy as np
 import abc
-from utils import intervalhandler
+from src.utils import intervalhandler
 
 
 class GeneralAnalyzer:

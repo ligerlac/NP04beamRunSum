@@ -6,8 +6,8 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 
 import argparse
 import logging
-from plotting import heinzplot
-from analyzers import group
+from src.plotting import heinzplot
+from src.analyzers import group
 
 
 def main(args):
@@ -22,6 +22,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--datelist", nargs="+", default=None, help="dates to consider")
     parser.add_argument("--debug", default=False, action="store_true", help="activate debug level logging")
-    parser.add_argument("--output", type=str, default="output/heinz_plot.png", help="name of output file")
+    parser.add_argument("--output", type=str, default="data/output/heinz_plot.png", help="name of output file")
     args = parser.parse_args()
     main(args)

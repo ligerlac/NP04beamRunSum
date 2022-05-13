@@ -6,7 +6,7 @@ __email__ = "lino.oscar.gerlach@cern.ch"
 
 import pandas as pd
 import numpy as np
-from analyzers.base import single
+import src.analyzers.base.single as single
 from functools import cached_property
 
 

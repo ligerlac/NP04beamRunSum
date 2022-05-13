@@ -5,9 +5,8 @@ __maintainer__ = "Lino Gerlach"
 __email__ = "lino.oscar.gerlach@cern.ch"
 
 import pandas as pd
-from analyzers.base import combined
-from utils import streamersearcher
-from utils import downtimecalculator
+import src.analyzers.base.combined as combined
+from src.utils import downtimecalculator, streamersearcher
 from functools import cached_property
 import csv
 

@@ -4,11 +4,12 @@ __version__ = "0.0.1"
 __maintainer__ = "Lino Gerlach"
 __email__ = "lino.oscar.gerlach@cern.ch"
 
-from analyzers import single, combined
-import config
+import src.analyzers.single as single
+import src.analyzers.combined as combined
+from src import config
 
 
-class AnalyzerGroup:
+class SummaryGroup:
     """Group for summary plot"""
     def __init__(self):
         self.beam_mom = None
@@ -56,19 +57,20 @@ class StreamerGroup:
     def __init__(self):
         self.detector_status = None
         self.streamer = None
-        self.daq = None
+        #self.daq = None
 
     @classmethod
-    def from_args(cls, args):
+    def from_args(cls, args=None):
         ana_group = cls()
-        file_names = config.InputFileNames(args.datelist)
+        file_names = config.InputFileNames()
         ana_group.detector_status = single.DetectorStatusAnalyzer(file_names=file_names.detector_status)
         ana_group.streamer = single.StreamerAnalyzer(file_names=file_names.streamer)
         ana_group.streamer_active = ana_group.streamer.get_projected_copy(ana_group.detector_status)
-        ana_group.duration = combined.SimpleDurationAnalyzer()
-        ana_group.duration.analyzer_dict = {'all': ana_group.streamer, 'active': ana_group.streamer_active}
-        ana_group.cum_duration = combined.CumDurationAnalyzer()
-        ana_group.cum_duration.analyzer_dict = {'all': ana_group.streamer, 'active': ana_group.streamer_active}
+        ana_group.duration = combined.SimpleDurationAnalyzer(
+            analyzer_dict={'all': ana_group.streamer, 'active': ana_group.streamer_active})
+        ana_group.cum_duration = combined.CumDurationAnalyzer(
+            analyzer_dict={'all': ana_group.streamer, 'active': ana_group.streamer_active}
+        )
         return ana_group
 
 
