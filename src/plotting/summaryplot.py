@@ -10,7 +10,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 from functools import cached_property
 from datetime import datetime
-from utils import formatting
+from src.utils import formatting
 
 
 class SummaryPlot:

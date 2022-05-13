@@ -26,13 +26,13 @@ class CombinedHeinzAnalyzer(combined.ResampledAnalyzer):
 
     def _decorate_stable(self, df):
         start_ts, end_ts = [pd.to_datetime("2018-10-05 00:00:00"), pd.to_datetime("2018-10-17 12:00:00")]
-        b_df = df.loc[df.index <= start_ts]
-        d_df = df.loc[(df.index > start_ts) * (df.index < end_ts)]
-        a_df = df.loc[(df.index >= end_ts)]
-        b_df['stable'] = (b_df['resistance'] > 1452) * (b_df['resistance'] < 1472) * (b_df['avgvolt'] > 120000)
-        d_df['stable'] = (d_df['resistance'] > 1465) * (d_df['avgvolt'] > 120000)
-        a_df['stable'] = (a_df['resistance'] > 1465) * (a_df['avgvolt'] > 180000)
-        return pd.concat([b_df, d_df, a_df], axis=0)
+        b_df = df.iloc[df.index <= start_ts]
+        d_df = df.iloc[(df.index > start_ts) * (df.index < end_ts)]
+        a_df = df.iloc[(df.index >= end_ts)]
+        df.loc[df.index <= start_ts, 'stable'] = (b_df['resistance'] > 1452) * (b_df['resistance'] < 1472) * (b_df['avgvolt'] > 120000)
+        df.loc[(df.index > start_ts) * (df.index < end_ts), 'stable'] = (d_df['resistance'] > 1465) * (d_df['avgvolt'] > 120000)
+        df.loc[df.index >= end_ts, 'stable'] = (a_df['resistance'] > 1465) * (a_df['avgvolt'] > 180000)
+        return df
 
     @cached_property
     def streamer_intervals(self):
