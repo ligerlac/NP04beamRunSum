@@ -67,10 +67,9 @@ class StreamerGroup:
         ana_group.streamer = single.StreamerAnalyzer(file_names=file_names.streamer)
         ana_group.streamer_active = ana_group.streamer.get_projected_copy(ana_group.detector_status)
         ana_group.duration = combined.SimpleDurationAnalyzer(
-            analyzer_dict={'all': ana_group.streamer, 'active': ana_group.streamer_active})
+            analyzer_dict={'all': ana_group.streamer, 'active detector': ana_group.streamer_active})
         ana_group.cum_duration = combined.CumDurationAnalyzer(
-            analyzer_dict={'all': ana_group.streamer, 'active': ana_group.streamer_active}
-        )
+            analyzer_dict={'all': ana_group.streamer, 'active detector': ana_group.streamer_active})
         return ana_group
 
 

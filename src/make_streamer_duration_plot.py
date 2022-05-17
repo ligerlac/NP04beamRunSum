@@ -8,7 +8,6 @@ import argparse
 import logging
 from src.plotting import durationplot
 import src.analyzers.group as group
-#from src.analyzers import group
 
 
 def main(args):
@@ -21,10 +20,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, default="data/input/np04_hv_cut_periods.csv")
     parser.add_argument("--datelist", nargs="+", default=None, help="dates to consider")
     parser.add_argument("--debug", default=False, action="store_true", help="activate debug level logging")
     parser.add_argument("--output", type=str, default="data/output/duration_plots.png", help="name of output file")
     args = parser.parse_args()
-    print(f'args={args}')
     main(args)
