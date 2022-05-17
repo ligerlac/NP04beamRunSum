@@ -29,7 +29,7 @@ class HeinzPlot:
         return heinz_plot
 
     def create_skeloton(self):
-        self.fig = plt.figure(figsize=(6, 8))
+        self.fig = plt.figure(figsize=(8, 8))
         self.grid = gridspec.GridSpec(ncols=1, nrows=2, figure=self.fig, height_ratios=[1, 1])
         self.fig.subplots_adjust(left=0.06, bottom=0.1, right=0.94, top=0.93, wspace=None, hspace=0.)
 
@@ -93,12 +93,39 @@ class HeinzPlot:
             for period in self.analyzer_group.beam_mom.active_periods:
                 plot.axvspan(period[0], period[1], facecolor='green', alpha=0.2)
 
+    def plot_curr(self):
+        self.curr_plot.plot(self.analyzer_group.curr.data_frame.index,
+                            self.analyzer_group.curr.data_frame['curr'],
+                            color='red', linestyle='solid', markersize=0.15)
+
+    def plot_curr_std(self):
+        self.curr_std_plot.plot_date(self.analyzer_group.curr.interval_handler.mean_time_stamps,
+                                     self.analyzer_group.curr.val_std_array,
+                                     color='darkviolet', markersize=0.5)
+
+    def plot_volt_std(self):
+        self.volt_std_plot.plot_date(self.analyzer_group.volt.interval_handler.mean_time_stamps,
+                                     self.analyzer_group.volt.val_std_array,
+                                     color='green', markersize=0.5)
+
+    def plot_volt(self):
+        self.volt_plot.plot(self.analyzer_group.volt.data_frame.index,
+                            self.analyzer_group.volt.data_frame['volt'],
+                            color='blue', linestyle='solid', markersize=0.15)
+
+    def plot_duration(self, binning=None):
+        if binning is None:
+            binning = [0, 5, 10, 100, float('inf')]
+        self.analyzer_group.duration.binning = binning
+        df_plot = self.analyzer_group.duration.data_frame
+        df_plot.plot.bar(ax=self.duration_plot, rot=0, logy=True)
+
 
     def plot(self):
-        self.analyzer_group.curr.plot_on(self.curr_plot)
-        self.analyzer_group.volt.plot_on(self.volt_plot)
-        self.analyzer_group.curr.plot_std_on(self.curr_std_plot)
-        self.analyzer_group.volt.plot_std_on(self.volt_std_plot)
+        self.plot_curr()
+        self.plot_volt()
+        self.plot_curr_std()
+        self.plot_volt_std()
         c_ts = self.analyzer_group.curr.data_frame.index
         self.curr_plot.set_xlim(c_ts[0], c_ts[-1])
         days = mdates.DayLocator()

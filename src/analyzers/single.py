@@ -43,27 +43,11 @@ class CurrAnalyzer(single.HeinzAnalyzer):
         super().__init__(interval=interval, file_names=file_names)
         self.val_name = 'curr'
 
-    def plot_on(self, plot):
-        return plot.plot_date(self.data_frame.index, self.data_frame[self.val_name], color='red',
-                              markersize=0.15, linestyle='solid')
-
-    def plot_std_on(self, plot):
-        return plot.plot_date(self.interval_handler.mean_time_stamps, self.val_std_array, color='darkviolet',
-                              markersize=0.5)
-
 
 class VoltAnalyzer(single.HeinzAnalyzer):
     def __init__(self, interval=pd.Timedelta(30, "m"), file_names=None):
         super().__init__(interval=interval, file_names=file_names)
         self.val_name = 'volt'
-
-    def plot_on(self, plot):
-        return plot.plot_date(self.data_frame.index, self.data_frame[self.val_name], color='blue',
-                              markersize=0.15, linestyle='solid')
-
-    def plot_std_on(self, plot):
-        return plot.plot_date(self.interval_handler.mean_time_stamps, self.val_std_array, color='green',
-                              markersize=0.5)
 
 
 class DetectorStatusAnalyzer(single.GeneralAnalyzer):
@@ -118,7 +102,6 @@ class NewDAQAnalyzer(single.GeneralAnalyzer):
         self.upper_ts = upper_ts
 
     def _get_data_frame_from_file(self, fn):
-        #5844, physics, "Mon, 12 Nov 2018 06:04:10 GMT", "Mon, 12 Nov 2018 08:02:19 GMT", 11584
         return pd.read_csv(fn, sep=',', index_col=0, usecols=[0, 1, 2, 3, 4],
                            names=['runnumber', 'cat', 'begin', 'end', 'trig_count'], parse_dates=[2, 3])
 
